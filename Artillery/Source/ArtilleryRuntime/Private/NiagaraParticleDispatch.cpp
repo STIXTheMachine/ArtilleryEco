@@ -244,26 +244,35 @@ void UNiagaraParticleDispatch::QueueParticleSystemParameter(const FBoneKey& Key,
 void UNiagaraParticleDispatch::AddNDCReference(FName Name, TObjectPtr<UNiagaraDataChannelAsset> DataChannelAssetPtr) const
 {
 	TObjectPtr<UNiagaraDataChannelWriter> MyWriter = UNiagaraDataChannelLibrary::CreateDataChannelWriter(GetWorld(), DataChannelAssetPtr->Get(), FNiagaraDataChannelSearchParameters(), 1, true, true, true, "Held Writer");
-	ProjectileNameToNDCAsset->Add(Name, ManagementPayload(DataChannelAssetPtr, MyWriter, KeyToRecordCuckoo()));
+	ProjectileNameToNDCAsset->Add(Name, ManagementPayload(DataChannelAssetPtr, MyWriter, TSet<FSkeletonKey>()));
 }
 
-void UNiagaraParticleDispatch::UpdateNDCChannels() const
+void UNiagaraParticleDispatch::UpdateNDCChannels()
 {
+	TPair<FName, FSkeletonKey> NameKeyPair;
+	while (NameToKeyQueue.Dequeue(NameKeyPair))
+	{
+		ManagementPayload* KeyPayload = ProjectileNameToNDCAsset->Find(NameKeyPair.Key);
+		if (KeyPayload != nullptr)
+		{
+			KeyPayload->Get<2>().Add(NameKeyPair.Value);
+		}
+	}
+	
 	UTransformDispatch* TD = GetWorld()->GetSubsystem<UTransformDispatch>();
 	
 	for (auto it = ProjectileNameToNDCAsset->CreateIterator(); it; ++it)
 	{
-		UNiagaraDataChannelWriter* ChannelWriter = it.Value().Get<1>();
-		KeyToRecordCuckoo* KeyToRecordMap = &it.Value().Get<2>();
-		
-		if (KeyToRecordMap->size() > 0)
+		TSet<FSkeletonKey>* KeySet = &it.Value().Get<2>();
+		if (KeySet->Num() > 0)
 		{
+			UNiagaraDataChannelWriter* ChannelWriter = it.Value().Get<1>();
 			FNiagaraDataChannelSearchParameters SearchParams;
-			ChannelWriter->InitWrite(SearchParams, KeyToRecordMap->size(), true, true, true, UNiagaraParticleDispatch::StaticClass()->GetName());
-
-			for (auto& KeyToRecord : KeyToRecordMap->lock_table())
+			ChannelWriter->InitWrite(SearchParams, KeySet->Num(), true, true, true, UNiagaraParticleDispatch::StaticClass()->GetName());
+			
+			for (TSet<FSkeletonKey>::TConstIterator RecordIter = KeySet->CreateConstIterator(); it; ++it)
 			{
-				TOptional<FTransform3d> KeyTransform = TD->CopyOfTransformByObjectKey(KeyToRecord.first);
+				TOptional<FTransform3d> KeyTransform = TD->CopyOfTransformByObjectKey(*RecordIter);
 				if (KeyTransform.IsSet())
 				{
 					ChannelWriter->WritePosition(TEXT("Position"), 0, KeyTransform->GetLocation());

@@ -39,6 +39,7 @@ class FArtilleryBusyWorker : public FRunnable {
 	//Going forward, it is potentially worthwhile for us switch to this...
 	ITickHeavy* ParticleSystemPointer;
 	ITickHeavy* ProjectileSystemPointer;
+	ITickHeavy* EventLogSystemPointer;
 	//Thanks to OrdIn, we can guarantee what is up when, and by expanding OrdIn, we can control what is
 	//deinitialized when if we need to, as well. It wouldn't even be that hard, simply add a deregister to SkeletonLord
 	

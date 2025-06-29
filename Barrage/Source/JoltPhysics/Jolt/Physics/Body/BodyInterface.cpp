@@ -356,25 +356,7 @@ void BodyInterface::NotifyShapeChanged(const BodyID &inBodyID, Vec3Arg inPreviou
 
 void BodyInterface::SetObjectLayer(const BodyID &inBodyID, ObjectLayer inLayer)
 {
-	BodyLockWrite lock(*mBodyLockInterface, inBodyID);
-	if (lock.Succeeded())
-	{
-		Body &body = lock.GetBody();
-
-		// Check if layer actually changed, updating the broadphase is rather expensive
-		if (body.GetObjectLayer() != inLayer)
-		{
-			// Update the layer on the body
-			mBodyManager->SetBodyObjectLayerInternal(body, inLayer);
-
-			// Notify broadphase of change
-			if (body.IsInBroadPhase())
-			{
-				BodyID id = body.GetID();
-				mBroadPhase->NotifyBodiesLayerChanged(&id, 1);
-			}
-		}
-	}
+	throw; //we no longer support this.
 }
 
 ObjectLayer BodyInterface::GetObjectLayer(const BodyID &inBodyID) const

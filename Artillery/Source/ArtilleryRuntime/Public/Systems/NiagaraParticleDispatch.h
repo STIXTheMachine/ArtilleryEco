@@ -111,6 +111,7 @@ public:
 		BoneKeyToParticleIDMapping = MakeShareable(new TMap<FBoneKey, FParticleID>());
 		KeyToParticleParamMapping = MakeShareable(new TMap<FBoneKey, TSharedPtr<TQueue<NiagaraVariableParam>>>());
 		ProjectileNameToNDCAsset = MakeShareable(new TMap<FName, ManagementPayload>());
+		NameToKeyQueue.Empty();
 	}
 
 	static inline UNiagaraParticleDispatch* SelfPtr = nullptr;
@@ -127,7 +128,7 @@ public:
 	
 	virtual bool RegistrationImplementation() override;
 	void ArtilleryTick() override;
-	void UpdateNDCChannels() const;
+	void UpdateNDCChannels();
 	virtual void Tick(float DeltaTime) override;
 
 	TStatId GetStatId() const
@@ -152,8 +153,10 @@ protected:
 	// just a reminder, should it be relevant. libcuckoo::hashmap find throws by default.
 	// if this is a source of slowdown, you may consider debugging and using the dreadful KeySlink. it's not debugged tho..
 	// good luck I guess lol.
-	using ManagementPayload = TTuple<TObjectPtr<UNiagaraDataChannelAsset>, TObjectPtr<UNiagaraDataChannelWriter>, KeyToRecordCuckoo>;
+	using ManagementPayload = TTuple<TObjectPtr<UNiagaraDataChannelAsset>, TObjectPtr<UNiagaraDataChannelWriter>, TSet<FSkeletonKey>>;
 	TSharedPtr<TMap<FName, ManagementPayload>> ProjectileNameToNDCAsset;
+
+	TQueue<TPair<FName, FSkeletonKey>> NameToKeyQueue;
 
 public:
 	virtual void PostInitialize() override;
@@ -223,16 +226,9 @@ public:
 		return NDCAsset != nullptr ? TWeakObjectPtr<UNiagaraDataChannelAsset>(NDCAsset) : nullptr;
 	}
 
-	void RegisterKeyForProcessing(FName ProjectileName, FSkeletonKey ProjectileKey, TWeakObjectPtr<UNiagaraDataChannelAsset> ProjectileNDCAssetPtr) const
+	void RegisterKeyForProcessing(FName ProjectileName, FSkeletonKey ProjectileKey, TWeakObjectPtr<UNiagaraDataChannelAsset> ProjectileNDCAssetPtr)
 	{
-		ManagementPayload* KeyToRecordMap = ProjectileNameToNDCAsset->Find(ProjectileName);
-		if (KeyToRecordMap != nullptr)
-		{
-			ParticleRecord NewPR;
-			NewPR.NDCAssetPtr = ProjectileNDCAssetPtr;
-			NewPR.NDCIndex = -1;
-			KeyToRecordMap->Get<2>().insert_or_assign(ProjectileKey, NewPR);
-		}
+		NameToKeyQueue.Enqueue(TPair<FName, FSkeletonKey>(ProjectileName, ProjectileKey));
 	}
 
 	void CleanupKey(const FSkeletonKey Key, FName ProjectileName = "")
@@ -240,13 +236,13 @@ public:
 		ManagementPayload* KeyToRecordMap = ProjectileNameToNDCAsset->Find(ProjectileName);
 		if (KeyToRecordMap != nullptr)
 		{
-			KeyToRecordMap->Get<2>().erase(Key);
+			KeyToRecordMap->Get<2>().Remove(Key);
 		}
 		else
 		{
 			for (auto it = ProjectileNameToNDCAsset->CreateIterator(); it; ++it)
 			{
-				it.Value().Get<2>().erase(Key);
+				it.Value().Get<2>().Remove(Key);
 			}
 		}
 	}

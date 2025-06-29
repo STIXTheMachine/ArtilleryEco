@@ -1,7 +1,8 @@
 ﻿#pragma once
-
-#include "immintrin.h"
 #include "CoreMinimal.h"
+THIRD_PARTY_INCLUDES_START
+#include "immintrin.h"
+
 #include <memory>
 #include "Memory/sseutil.h"
 #include "Memory/aligned_allocator.h"
@@ -24,3 +25,4 @@ using __uint128_t=Fortran::common::uint128_t;
 //SKETCHALLOC sse::AlignedAllocator<ValueType, AllocatorAlignment>;
 
 #define SKETCHALLOC AlignedAllocator<ValueType, AllocatorAlignment>
+THIRD_PARTY_INCLUDES_END

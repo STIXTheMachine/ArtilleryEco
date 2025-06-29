@@ -399,19 +399,17 @@ void UBarrageDispatch::StepWorld(uint64 Time, uint64_t TickCount)
 	TSharedPtr<FWorldSimOwner> PinSim = JoltGameSim;
 			
 	TRACE_CPUPROFILER_EVENT_SCOPE_STR("Step World");
-	if (JoltGameSim)
+	if (this && JoltGameSim && PinSim)
 	{
 		if(TickCount % 128 == 0)
 		{	
 			//TRACE_CPUPROFILER_EVENT_SCOPE_STR("Broadphase Optimize");
-			//we set a mutable for debug purposes, so we can check if the first optimization has occured in cases of perf
-			//degeneration.
-			JoltGameSim->Optimized = JoltGameSim->OptimizeBroadPhase();
+			PinSim->OptimizeBroadPhase();
 		}
 		
 		CleanTombs();
-		JoltGameSim->StepSimulation();
-		TSharedPtr<TMap<FBarrageKey, TSharedPtr<FBCharacterBase>>> HoldOpenCharacters = JoltGameSim->CharacterToJoltMapping;
+		PinSim->StepSimulation();
+		TSharedPtr<TMap<FBarrageKey, TSharedPtr<FBCharacterBase>>> HoldOpenCharacters = PinSim->CharacterToJoltMapping;
 		if(HoldOpenCharacters)
 		{
 			// ReSharper disable once CppTemplateArgumentsCanBeDeduced - disabled to clear warning that causes compiler error if "fixed"

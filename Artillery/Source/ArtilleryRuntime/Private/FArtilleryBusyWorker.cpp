@@ -2,7 +2,7 @@
 #include "ArtilleryDispatch.h"
 #include "Windows/WindowsSystemIncludes.h"
 #include <timeapi.h>
-
+#include "LowLogTimeAndRate.h"
 #include "ArtilleryBPLibs.h"
 #include "BarrageDispatch.h"
 #include "Containers/TripleBuffer.h"
@@ -209,6 +209,7 @@ void FArtilleryBusyWorker::RunFrameProcessingLoop(bool missedPrior, uint64_t cur
 			)
 		)
 		{
+			CustomTimer<"BusyWorkerCoreLoop"> Time;
 			currentIndexCabling = CablingControlStream->highestInput;
 			PacketElement current = 0;
 			bool RemoteInput = false;
@@ -245,6 +246,7 @@ void FArtilleryBusyWorker::RunFrameProcessingLoop(bool missedPrior, uint64_t cur
 				StartTicklitesApply->Trigger();
 				StartRunAhead->Trigger();
 				ContingentPhysicsLinkage->StepWorld(TickliteNow, SeqNumber);
+				// ReSharper disable once CppExpressionWithoutSideEffects (it has _ rather a lot _ of side-effects)
 				ContingentPhysicsLinkage->BroadcastContactEvents();
 				if (ParticleSystemPointer)
 				{
@@ -253,6 +255,10 @@ void FArtilleryBusyWorker::RunFrameProcessingLoop(bool missedPrior, uint64_t cur
 				if (ProjectileSystemPointer)
 				{
 					ProjectileSystemPointer->ArtilleryTick();
+				}
+				if (EventLogSystemPointer)
+				{
+					EventLogSystemPointer->ArtilleryTick();
 				}
 			}
 		}
@@ -267,6 +273,7 @@ void FArtilleryBusyWorker::RunFrameProcessingLoop(bool missedPrior, uint64_t cur
 			if (SeqNumber % SendHertzFactor == 0)
 			{
 				sent = false;
+				
 			}
 			++SeqNumber;
 		}//because we would be pushing our luck w. the error bars on sleep in certain cases, we try to detect those so we can instead spin. Hence the modifier.
@@ -317,10 +324,10 @@ uint32 FArtilleryBusyWorker::Run()
 	PowerThrottling.StateMask = 0;
 	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL);
 
-	SetProcessInformation(GetCurrentProcess(), 
-						  ProcessPowerThrottling, 
-						  &PowerThrottling,
-						  sizeof(PowerThrottling));
+	// SetProcessInformation(GetCurrentProcess(), 
+	// 					  ProcessPowerThrottling, 
+	// 					  &PowerThrottling,
+	// 					  sizeof(PowerThrottling));
 	
 	//we can now start the sim. we latch only on the apply step.
 	StartTicklitesSim->Trigger();

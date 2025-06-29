@@ -1,9 +1,18 @@
 ﻿#pragma once
+#include <iostream>
+
 #include "AtypicalDistances.h"
+#include <bitset>
+#include <bit>
+
+#include "LibMorton/morton.h"
+#include "Quaternion.h"
 
 class FZOrderDistances
 {
 public:
+
+	static inline const FRotator3d TurnwiseTrick = FRotator3d(0.1,0.1,0.1);
 	//interleave  
 	static uint64_t ZInterleave(uint32 x, uint32 y, uint32 z)
 	{
@@ -14,7 +23,8 @@ public:
 	//1000 0001 is the exp for 4. We'll be using 0b101111100 as our discriminant.
 	static inline uint32 LIMITS(float f)
 	{
-		return f <= -8 || f >= 8 ? *(uint32*)&f : 0;
+		auto a = std::bit_cast<uint32_t, float>(f*512);
+		return a <= -8 || a >= 8 ? a : 0;
 	}
 
 	//morton\z interleave expansion for 8 bits, right justified.
@@ -435,7 +445,7 @@ public:
 
 		//top 8 bits, masked like: 0b1011 1111. then shifted 25. leaving us 0b0101 1111 (9-> 1001, so B-> 1011)
 		uint64 begin_compose = uint64(SpecializedScatterLUT[(bits & 0xBF000000) >> 25]) << 45; //18 bits...
-
+		//std::cerr << "show bits: " <<  std::bitset<64>{ begin_compose | (uint64(NormalLUT[mbitsB]) << 24) | uint64(NormalLUT[mbitsA])} << std::endl;
 		//the scatter LUT we're using is... odd.
 		//we've turned 0b1_2 3456_ into 0b1002 0030 0400 5006 0000 0000 0000 0000, knocking 3 bits out of the exponent.
 		//and yes, we could store uint64 in the lookup table, but that actually turns out to suck for cache.
@@ -619,11 +629,15 @@ public:
 	*	sweet jesus. I think this is _right_. at the very least, I think it will work.
 	*
 	*	I also recommend reading https://en.wikipedia.org/wiki/Moser%E2%80%93de_Bruijn_sequence
+	*
+	*	I've condensed the actual matrix CONSIDERABLY in a way that's not entirely safe, just to get some more shannon entropy.
+	*	The presence of constants in the vectorization was extremely bad for hashing.
 	*/
 	struct FPLEmbed
 	{
-		uint64 voxeldata[5];
-		static constexpr uint8 Size = 5;
+		
+		uint64 voxeldata[3];
+		static constexpr uint8 Size = 3;
 
 		static FPLEmbed FromPoint(FVector3f A, float MaxExtent)
 		{
@@ -635,87 +649,33 @@ public:
 		{
 			double len = (X*X)+(Y*Y)+(Z*Z);
 			float T = sqrt(MaxExtent - len - 1);
-			float xx = (X * X) / sqrt(2);
+			float xx = (X * X);
 			float xy = X * Y;
 			float xz = X * Z;
-
-			float xm = X;
 			float tx = T * X;
-			float yy = (Y * Y) / sqrt(2);
+			float yy = (Y * Y);
 
 			float yz = (Y * Z);
-			float ym = Y;
 			float ty = T * Y;
 
-			float zz = (Z * Z) / sqrt(2);
-			float zm = (Z);
+			float zz = (Z * Z);
 			float tz = T * Z;
 
-			float sm = 1 / sqrt(2);
-			float tt = T;
-			float tm = T * T / sqrt(2);
+			float tm = T * T;
 			FPLEmbed ret;
 
+
+
 			ret.voxeldata[0] = ComposeVoxelCode(xy, yz, xz);
-			ret.voxeldata[1] = ComposeVoxelCode(xm, ym, zm);
-			ret.voxeldata[2] = ComposeVoxelCode(tx, ty, tz);
-			ret.voxeldata[3] = ComposeVoxelCode(yy, xx, zz);
-			ret.voxeldata[4] = ComposeVoxelCode(tm, tt, sm); //eliminating this would be VERY good.
-			//perhaps t and m can be mapped in a way?
+			ret.voxeldata[1] = ComposeVoxelCode(tx, ty, tz);
+			ret.voxeldata[2] = ComposeVoxelCode(yy+tm, xx+tm, zz+tm);
 			return ret;
 		}
 
 		static FPLEmbed FromLine(FVector3f Source, FVector3f Direction)
 		{
-			float x = Source.X;
-			float y = Source.Y;
-			float z = Source.Z;
-			float a = Direction.X;
-			float b = Direction.Y;
-			float c = Direction.Z;
-			//the names get inaccurate here but I'm matching them to the PEmb
-			//cause otherwise organizing the componentwise morton encode is hell.
-
-			//tbh, I'm worried I may have done my math wrong.
-			float xx = (1 - x * x) / sqrt(2);
-			float xy = -1 * x * y;
-			float xz = -1 * x * z;
-
-			float xm = a*(1 - x * x) - b * x * y - c * x * z;
-			float tx = 0;
-			float yy = (1 - y * y) / sqrt(2);
-
-			float yz = -1 * y * z;
-			float ym = -1*(a * x * y) + b*(1 - y * y) - c * y * z;
-			float ty = 0;
-
-			float zz = (1 - z * z) / sqrt(2);
-			float zm = -1*(a * x * z) - (b * y * z) + c*(1 - z * z);
-			float tz = 0;
-
-			float sm = (
-			          a*(a * (1 - x * x) - b * x * y - c * x * z)
-					+ b*(-a * x * y + b*(1 - y * y) - c * y * z)
-					+ c*(-a * x * z - b * y * z + c*(1 - z * z))
-					)
-				/ sqrt(2);
-			float tt = 0;
-			float tm = 0;
-
-			//morton coding actually ADDS relationship data, interestingly.
-			//it took me a long time to understand this, but the gist is, if it didn't,
-			//you wouldn't need to decompose the components to do most operations.
-			//it loses information in exchange for adding that relationship.
-			//in fact, this is what makes it a fractal space-filling curve, in a sense.
-			FPLEmbed ret;
-			ret.voxeldata[0] = ComposeVoxelCode(xy, yz, xz);
-			ret.voxeldata[1] = ComposeVoxelCode(xm, ym, zm);
-			ret.voxeldata[2] = ComposeVoxelCode(tx, ty, tz);
-			ret.voxeldata[3] = ComposeVoxelCode(yy, xx, zz);
-			ret.voxeldata[4] = ComposeVoxelCode(tm, tt, sm); //eliminating this would be VERY good.
-			//looking over our vector components, it seems likely that we can drive this down to 12 functional
-			//dimensions by using one or two additional tricks.
-			return ret;
+			
+			return FromLine(Source.X, Source.Y, Source.Z, Direction.X, Direction.Y, Direction.Z);
 		}
 
 		static FPLEmbed FromLine(float x, float y, float z, float a, float b, float c)
@@ -724,30 +684,25 @@ public:
 			//cause otherwise organizing the componentwise morton encode is hell.
 
 			//tbh, I'm worried I may have done my math wrong.
-			float xx = (1 - x * x) / sqrt(2);
+			
+			float xx = (1 - x * x) ;
 			float xy = -1 * x * y;
 			float xz = -1 * x * z;
 
 			float xm = a*(1 - x * x) - b * x * y - c * x * z;
-			float tx = 0;
-			float yy = (1 - y * y) / sqrt(2);
+			float yy = (1 - y * y);
 
 			float yz = -1 * y * z;
 			float ym = -1*(a * x * y) + b*(1 - y * y) - c * y * z;
-			float ty = 0;
 
-			float zz = (1 - z * z) / sqrt(2);
+			float zz = (1 - z * z);
 			float zm = -1*(a * x * z) - (b * y * z) + c*(1 - z * z);
-			float tz = 0;
 
 			float sm = (
 					  a*(a * (1 - x * x) - b * x * y - c * x * z)
 					+ b*(-a * x * y + b*(1 - y * y) - c * y * z)
 					+ c*(-a * x * z - b * y * z + c*(1 - z * z))
-					)
-				/ sqrt(2);
-			float tt = 0;
-			float tm = 0;
+					);
 
 			//morton coding actually ADDS relationship data, interestingly.
 			//it took me a long time to understand this, but the gist is, if it didn't,
@@ -757,9 +712,38 @@ public:
 			FPLEmbed ret;
 			ret.voxeldata[0] = ComposeVoxelCode(xy, yz, xz);
 			ret.voxeldata[1] = ComposeVoxelCode(xm, ym, zm);
-			ret.voxeldata[2] = ComposeVoxelCode(tx, ty, tz);
-			ret.voxeldata[3] = ComposeVoxelCode(yy, xx, zz);
-			ret.voxeldata[4] = ComposeVoxelCode(tm, tt, sm); //eliminating this would be VERY good.
+			ret.voxeldata[2] = ComposeVoxelCode(yy+sm, xx+sm, zz+sm);
+			//looking over our vector components, it seems likely that we can drive this down to 12 functional
+			//dimensions by using one or two additional tricks.
+			return ret;
+		}
+
+		// ALWAYS BET ON LEBESGUE
+		//
+		// Generate an alternative line embedding to increase entropy by relating the a and v points directly.
+		// this is done using a Z-Z interleave, or a Zer curve as I've been jokingly calling it, and a winding
+		// rotation. A winding rotation here actually encodes a little more info than you'd expect.
+		static inline FPLEmbed embedLineL1(
+			float ax, float ay, float az,
+			float vx, float vy, float vz)
+		{
+			FPLEmbed ret;
+			auto a = FVector(ax, ay, az);
+			auto v = FVector(vx, vy,vz);
+			FRotator Point = v.Rotation();
+			FRotator Dir = a.Rotation();
+			// THIS PRESERVES the winding. It's equivalent to rotating to V from neutral THEN rotating to A.
+			auto FixedWinding = (Point.Quaternion() * Dir.Quaternion()).Rotator(); 
+			ret.voxeldata[0] = ComposeVoxelCode( FixedWinding.Pitch,  FixedWinding.Yaw,  FixedWinding.Roll);
+			auto tempA = ComposeVoxelCode(ax, ay, az);
+			auto tempV = ComposeVoxelCode(vx,vy,vz);
+			auto highA = tempA >> 32;
+			auto lowA = (tempA << 32) >> 32; //bonkbonk
+			
+			auto highV = tempV >> 32;
+			auto lowV = (tempV << 32) >> 32; //bonkbonkBONK
+			ret.voxeldata[1] = libmorton::morton2D_64_encode(highA, highV);
+			ret.voxeldata[2] = libmorton::morton2D_64_encode(lowA, lowV);
 			//looking over our vector components, it seems likely that we can drive this down to 12 functional
 			//dimensions by using one or two additional tricks.
 			return ret;
@@ -767,35 +751,5 @@ public:
 	};
 
 
-	/*
-	 *morton code aside. let M and T be x and a respectively from above, but morton encoded.
-	 * ALWAYS BET ON LEBESGUE
-	 *		┏ 1									┏		1- M^2
-	 *		 -T								->		(1- M^2) * T^2
-	 *		  0 ┛ * 1 -(M*M) * [1, -T, 0]		 			0		  ┛
-	 *		  but that's the L2 distance.
-	 *		  L1 IS well defined, and an embedding based on it can be found below.
-	 *		  This embedding should be possible to encode strictly as a morton code?
-	 *		  possibly?
-	 */
-	// tentative Line embedding (6 dims): we encode  three "kink" parameters as
-	// inputs for a (base point) and v (direction).
-	// take a look at tesseral arithmetic...
-	static inline std::array<double, 6> embedLineL1(
-		FVector a,
-		FVector v)
-	{
-		std::array<double, 6> emb;
-		// first half: kink ratios t_i = a_i / v_i
-		for (int i = 0; i < 3; ++i)
-		{
-			emb[i] = (v[i] != 0.0 ? a[i] / v[i] : 0.0);
-		}
-		// second half: weights = |v_i|
-		for (int i = 0; i < 3; ++i)
-		{
-			emb[3 + i] = std::abs(v[i]);
-		}
-		return emb;
-	}
+
 };

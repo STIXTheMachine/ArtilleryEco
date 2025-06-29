@@ -905,11 +905,6 @@ namespace sketch
 				core_(roundupdiv(nbuckets, 64), detail::default_val<T>()),
 				b_(b), div_(core_.size()), hf_(std::forward<Args>(args)...)
 			{
-#if VERBOSE_AF
-        if(nbuckets % 64) {
-            std::fprintf(stderr, "Warning: rounded n buckets from %u for %u so that it's convenient for our comparison strategy.\n", nbuckets, unsigned(div_.d_));
-        }
-#endif
 				assert(core_.size() % 64 == 0);
 				if (b_ < 1 || b_ > 64)
 				{
@@ -2082,94 +2077,7 @@ namespace sketch
 			}
 			else
 			{
-				const auto l2szfloor = ilog2(core_ref.size());
-				const auto pow2 = 1ull << l2szfloor;
-				if (l2szfloor < 6)
-				{
-					throw std::runtime_error("FinalDivBBitMinHash currently requires at least 64 minimizers.");
-				}
-				switch (l2szfloor)
-				{
-				case 6:
-					for (size_t _b = 0; _b < b; ++_b)
-					{
-						for (size_t i = 0; i < 64u; ++i)
-						{
-							ret.core_.operator[](i / (sizeof(T) * CHAR_BIT) * b + _b) |= (core_ref[i] & (static_cast<
-								FinalType>(1) << _b)) << (i % (sizeof(FinalType) * CHAR_BIT));
-						}
-					}
-					break;
-#if __SSE2__
-				SET_CASE(7, __m128i, l2szfloor);
-#endif
-#if __AVX2__
-				SET_CASE(8, __m256i, l2szfloor);
-#  if HAS_AVX_512
-        SET_CASE(9, __m512i, l2szfloor);
-
-        DEFAULT_SET_CASE(9u, __m512i, l2szfloor);
-#  else
-				DEFAULT_SET_CASE(8u, __m256i, l2szfloor);
-#  endif
-#elif __SSE2__ /* no avx2 or 512 */
-        DEFAULT_SET_CASE(7u, __m128i, l2szfloor);
-#else
-        default: {
-            const size_t n = core_ref.size();
-            for(size_t i = 0; i < n; ++i) {
-                static constexpr size_t ratio = sizeof(uint64_t) / sizeof(FinalType);
-                static constexpr size_t bits_per_vector = sizeof(uint64_t) * CHAR_BIT;
-                auto main_ptr = ret.core_.data() + i * ratio * b;
-                auto core_ptr = core_ref.data() + i * bits_per_vector;
-                for(size_t _b = 0; _b < b; ++_b) {
-                    auto ptr = main_ptr + (_b * ratio);
-                    for(size_t i = 0; i < bits_per_vector; ++i)
-                        setnthbit(ptr, i, getnthbit(core_ptr[i], _b));
-                }
-            }
-            return ret;
-        }
-#endif
-				}
-				if (pow2 != core_ref.size())
-				{
-					assert(is_pow2(core_ref.size() - (core_ref.size() & ((1ull << l2szfloor) - 1))));
-#define LEFTOVERS(type)\
-            for(size_t ind = pow2 / (sizeof(type) * CHAR_BIT);ind < core_ref.size() / (sizeof(type) * CHAR_BIT);++ind) {\
-                auto main_ptr = ret.core_.data() + ind * sizeof(type) / sizeof(FinalType) * b;\
-                auto core_ptr = core_ref.data() + ind * sizeof(type) * CHAR_BIT;\
-                for(auto _b = 0u; _b < b; ++_b) {\
-                    auto ptr = main_ptr + (_b * sizeof(type)/sizeof(FinalType));\
-                    for(size_t i = 0u; i < sizeof(type) * CHAR_BIT; ++i) {\
-                        setnthbit(ptr, i, getnthbit(core_ptr[i], _b));\
-                    }\
-                }\
-            }\
-            size_t ind = core_ref.size() / (sizeof(type) * CHAR_BIT) * (sizeof(type) * CHAR_BIT); // Get the last n
-#if HAS_AVX_512
-            LEFTOVERS(__m512i)
-#elif __AVX2__
-					LEFTOVERS(__m256i)
-#elif __SSE2__
-            LEFTOVERS(__m128i)
-#else
-            size_t ind = 0;
-#endif
-					while (ind < core_ref.size())
-					{
-						auto core_ptr = core_ref.data() + ind;
-						auto ref_ptr = ret.core_.data() + (ind / (sizeof(FinalType) * CHAR_BIT) * b);
-						for (size_t _b = 0; _b < b; ++_b)
-						{
-							for (size_t i = 0; i < 64u; ++i)
-							{
-								setnthbit(ref_ptr, i, getnthbit(core_ptr, _b));
-							}
-						}
-						ind += sizeof(FinalType) * CHAR_BIT;
-					}
-				}
+				throw std::runtime_error("FinalDivBBitMinHash currently requires at exactly 64 minimizers.");
 			}
 			return ret;
 		}

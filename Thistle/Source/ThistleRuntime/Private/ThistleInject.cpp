@@ -5,6 +5,7 @@
 #include "UFireControlMachine.h"
 #include "NavigationSystem.h"
 #include "ThistleBehavioralist.h"
+#include "UEventLogSystem.h"
 #include "Public/GameplayTags.h"
 
 void AThistleInject::OnDeath_Implementation()
@@ -69,6 +70,7 @@ inline bool AThistleInject::RegistrationImplementation()
 
 void AThistleInject::FinishDeath()
 {
+	GetWorld()->GetSubsystem<UEventLogSubsystem>()->LogEvent(E_EventLogType::Died, MyKey);	
 	this->Destroy();
 }
 

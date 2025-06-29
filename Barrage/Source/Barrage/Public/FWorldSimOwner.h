@@ -12,7 +12,7 @@
 #include "FBPhysicsInput.h"
 #include "SkeletonTypes.h"
 #include "EPhysicsLayer.h"
-#include "HungryBroadPhase.h"
+//#include "Experimental/CollisionGroupUnaware_FleshBroadPhase.h"
 #include "IsolatedJoltIncludes.h"
 
 // All Jolt symbols are in the JPH namespace
@@ -81,7 +81,7 @@ public:
 	TSharedPtr<KeyToBody> BarrageToJoltMapping;
 	TSharedPtr<BoundsToShape> BoxCache;
 	TSharedPtr<TMap<FBarrageKey, TSharedPtr<FBCharacterBase>>> CharacterToJoltMapping;
-	std::shared_ptr<JPH::HungryBroadPhase> mTestBroadPhase;
+	//std::shared_ptr<JPH::CollisionGroupUnaware_FleshBroadPhase> mTestBroadPhase;
 	
 	 /*
 	 * 
@@ -97,7 +97,7 @@ public:
 		return FoundBodyID;
 	}
 
-	const unsigned int AllocationArenaSize = 512 * 1024 * 1024;
+	const unsigned int AllocationArenaSize = 256 * 1024 * 1024;
 	TSharedPtr<JPH::TempAllocatorImpl> Allocator;
 	// List of active characters in the scene so they can collide
 	//https://github.com/jrouwe/JoltPhysics/blob/e3ed3b1d33f3a0e7195fbac8b45b30f0a5c8a55b/Jolt/Physics/Character/CharacterVirtual.h#L143

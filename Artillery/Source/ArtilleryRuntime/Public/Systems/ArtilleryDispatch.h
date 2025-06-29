@@ -144,6 +144,11 @@ public:
 	{
 		ArtilleryAsyncWorldSim.ParticleSystemPointer = ReferenceToSubsystem;
 	}
+
+	void SetEventLogSystem(ITickHeavy* ReferenceToSubsystem)
+	{
+		ArtilleryAsyncWorldSim.EventLogSystemPointer = ReferenceToSubsystem;
+	}
 	
 	FBLet GetFBLetByObjectKey(FSkeletonKey Target, ArtilleryTime Now);
 

@@ -281,9 +281,7 @@ RMat44 Character::GetWorldTransform(bool inLockBodies) const
 
 void Character::SetLayer(ObjectLayer inLayer, bool inLockBodies)
 {
-	mLayer = inLayer;
-
-	sCharacterGetBodyInterface(mSystem, inLockBodies).SetObjectLayer(mBodyID, inLayer);
+	throw;
 }
 
 bool Character::SetShape(const Shape *inShape, float inMaxPenetrationDepth, bool inLockBodies)

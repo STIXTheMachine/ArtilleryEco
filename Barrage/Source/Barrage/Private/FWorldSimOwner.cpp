@@ -2,12 +2,13 @@
 
 #include "BarrageContactListener.h"
 #include "CoordinateUtils.h"
-#include "HungryBroadPhase.h"
+#include "Experimental/CollisionGroupUnaware_FleshBroadPhase.h"
 #include "PhysicsCharacter.h"
 #include "CastShapeCollectors/SphereCastCollector.h"
 #include "CastShapeCollectors/SphereSearchCollector.h"
 #include "CollisionDetectionFilters/FirstHitRayCastCollector.h"
 #include "Chaos/TriangleMeshImplicitObject.h"
+#include "Jolt/Physics/Collision/BroadPhase/BroadPhaseBruteForce.h"
 
 using namespace JOLT;
 //it's going to be quite tempting to make that initexit a const or a reference. don't.
@@ -19,7 +20,7 @@ FWorldSimOwner::FWorldSimOwner(float cDeltaTime, InitExitFunction JobThreadIniti
 	BarrageToJoltMapping = MakeShareable(new KeyToBody());
 	BoxCache = MakeShareable(new BoundsToShape());
 	CharacterToJoltMapping = MakeShareable(new TMap<FBarrageKey, TSharedPtr<FBCharacterBase>>());
-	mTestBroadPhase = std::make_shared<HungryBroadPhase>();
+	//mTestBroadPhase = std::make_shared<CollisionGroupUnaware_FleshBroadPhase>();
 	// Register allocation hook. In this example we'll just let Jolt use malloc / free but you can override these if you want (see Memory.h).
 	// This needs to be done before any other Jolt function is called.
 	RegisterDefaultAllocator();
@@ -45,12 +46,13 @@ FWorldSimOwner::FWorldSimOwner(float cDeltaTime, InitExitFunction JobThreadIniti
 	job_system = MakeShareable(
 		new JobSystemThreadPool(cMaxPhysicsJobs, cMaxPhysicsBarriers, 5));
 	job_system->SetThreadInitFunction(JobThreadInitializer);
+	
+	
 	// Now we can create the actual physics system.
 	physics_system->Init(cMaxBodies, cNumBodyMutexes, cMaxBodyPairs, cMaxContactConstraints,
 	                     broad_phase_layer_interface, object_vs_broadphase_layer_filter,
-	                     object_vs_object_layer_filter);
+	                     object_vs_object_layer_filter);  //, mTestBroadPhase.get()); this can be used to experiment with broadphases.
 	physics_system->SetContactListener(contact_listener.Get());
-		mTestBroadPhase->Init(&physics_system->mBodyManager, broad_phase_layer_interface);
 	// The main way to interact with the bodies in the physics system is through the body interface. There is a locking and a non-locking
 	// variant of this. We're going to use the locking version.
 	body_interface = &physics_system->GetBodyInterface();
@@ -498,10 +500,6 @@ void FWorldSimOwner::StepSimulation()
 		constexpr int cCollisionSteps = 1;
 		if (AllocHoldOpen && JobHoldOpen)
 		{
-			{
-				TRACE_CPUPROFILER_EVENT_SCOPE_STR("Invoke LSH build...");
-				mTestBroadPhase->TestInvokeBuild();
-			}
 			TRACE_CPUPROFILER_EVENT_SCOPE_STR("Physics Update");
 
 		PhysicsHoldOpen->Update(DeltaTime, cCollisionSteps, AllocHoldOpen.Get(), JobHoldOpen.Get());

@@ -72,10 +72,10 @@ static const Color cColorSoftBodyFinalize = Color::sGetDistinctColor(23);
 PhysicsSystem::~PhysicsSystem()
 {
 	// Remove broadphase
-	delete mBroadPhase;
+	// delete mBroadPhase;
 }
 
-void PhysicsSystem::Init(uint inMaxBodies, uint inNumBodyMutexes, uint inMaxBodyPairs, uint inMaxContactConstraints, const BroadPhaseLayerInterface &inBroadPhaseLayerInterface, const ObjectVsBroadPhaseLayerFilter &inObjectVsBroadPhaseLayerFilter, const ObjectLayerPairFilter &inObjectLayerPairFilter)
+void PhysicsSystem::Init(uint inMaxBodies, uint inNumBodyMutexes, uint inMaxBodyPairs, uint inMaxContactConstraints, const BroadPhaseLayerInterface &inBroadPhaseLayerInterface, const ObjectVsBroadPhaseLayerFilter &inObjectVsBroadPhaseLayerFilter, const ObjectLayerPairFilter &inObjectLayerPairFilter, BroadPhase * BindBroadphase)
 {
 	// Clamp max bodies
 	uint max_bodies = min(inMaxBodies, cMaxBodiesLimit);
@@ -88,7 +88,14 @@ void PhysicsSystem::Init(uint inMaxBodies, uint inNumBodyMutexes, uint inMaxBody
 	mBodyManager.Init(max_bodies, inNumBodyMutexes, inBroadPhaseLayerInterface);
 
 	// Create broadphase
-	mBroadPhase = new BROAD_PHASE();
+	if (BindBroadphase == nullptr)
+	{
+		mBroadPhase = new BROAD_PHASE();
+	}
+	else
+	{
+		mBroadPhase = BindBroadphase;
+	}
 	mBroadPhase->Init(&mBodyManager, inBroadPhaseLayerInterface);
 
 	// Init contact constraint manager

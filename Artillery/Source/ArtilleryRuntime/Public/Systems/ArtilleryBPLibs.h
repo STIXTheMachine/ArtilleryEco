@@ -366,6 +366,7 @@ public:
 		return FSkeletonKey();
 	}
 
+	//we need a better and less dangerous idiom than this, you were right, @Maslab.
 	static AActor* GetLocalPlayer_UNSAFE()
 	{
 		if (UTransformDispatch::SelfPtr && UCanonicalInputStreamECS::SelfPtr)

@@ -2,8 +2,8 @@
 #define PROBCOUNTING_H__
 #include <numeric>
 
-#include "LSH/sketch/integral.h"
-#include "LSH/sketch/hash.h"
+#include "Grouping/sketch/integral.h"
+#include "Grouping/sketch/hash.h"
 
 namespace sketch {
 

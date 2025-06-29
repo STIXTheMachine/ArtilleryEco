@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include <atomic> //atomic is vastly more powerful and effective than the UE atomics, which they deprecated.
+#include <atomic> 
 
 #include "SkeletonTypes.h"
 #define ACC___MAXT 16
@@ -7,13 +7,15 @@
 #define ACC___HEAD 7
 #define ACC___CHILD 63
 #define ACC___WOODSWIDTH 4
-//DO NOT use them. DO NOT DO IT.
+
+//atomic is vastly more powerful and effective than the UE atomics, which they deprecated.
+//DO NOT use the UE atomics. DO NOT DO IT.
 //Only use the platform atomics or the standard <atomic>.
 
 //INSPIRED by https://www.1024cores.net/home/lock-free-algorithms/queues/intrusive-mpsc-node-based-queue
 //what in gods name is this.
 
-//unfair _FILO_ lockless mpsc horror. max width, short_max. why? screw you. that's why.
+//unfair _FILO_ lockless mpsc horror. max width of producers is 255. please don't need more than that.
 struct slink_node_t
 {
 	//by using memory blocks, we can trivially eliminate atomic behavior. the indexes would be agonizing otherwise.

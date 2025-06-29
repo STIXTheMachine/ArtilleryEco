@@ -1,4 +1,6 @@
 ﻿#pragma once
+#include "Structures/flat_hash_map.hpp"
+#include "Structures/PascalCircularBuffer.h"
 
 //This allocator relies on both an arena AND a pool. Each arena is bound to the TICK that created it. Each arena
 //is retained as long as that tick remains relevant. this is SPECIFICALLY useful for things that have a dynamic memory
@@ -17,6 +19,8 @@ THIRD_PARTY_INCLUDES_END
 //allocator for self-contained large objects that have highly variable internal structure.
 //This is a BAD choice for a general purpose allocator. It is also probably a bad choice for objects with
 //extremely regular internal structures.
+//https://stackoverflow.com/questions/21028299/is-this-behavior-of-vectorresizesize-type-n-under-c11-and-boost-container/21028912#21028912
+//for the... template magicka
 template  <typename T>
 class LOCOMOCORE_API IntraTickThreadblindAlloc;
 
@@ -62,8 +66,8 @@ public:
 		SPA = false;
 	}
 
-	//YOU MUST CALL INIT. YOU MUST CALL INIT. YOU MUST CALL INIT
-	//YOU OWN THE POOL'S LIFECYCLE. To use this safely, you should destroy the pool only AFTER
+	//You must either call init or have a VERY good plan.
+	//To use this safely, you should destroy the pool only AFTER
 	//the tick it was used in.
 	TrueLifecycleManager Init()
 	{
@@ -78,7 +82,7 @@ public:
 	//This is verboten. This is a bad idea. This is not a good plan.
 	void DoNotUseThis()
 	{
-		memset(InitialPool, 0,   Size);//sandblast for the TLSF control structs.
+		//memset(InitialPool, 0,   Size);//sandblast for the TLSF control structs.
 		UnderlyingTlsf = tlsf_create_with_pool( InitialPool, Size);
 	}
 
@@ -108,6 +112,21 @@ public:
 		(void)(InitialPool);
 	};
 
+	template <typename U>
+	IntraTickThreadblindAlloc<T>(IntraTickThreadblindAlloc<U>& a)
+	noexcept(std::is_nothrow_default_constructible<U>::value) : UnderlyingTlsf(a.UnderlyingTlsf), Size(a.Size),
+	SPA(false)
+	{
+		if (a.InitialPool != nullptr)
+		{
+			InitialPool = a.InitialPool;
+			SPA = true;
+		}
+		else
+		{
+			InitialPool = nullptr;
+		}
+	}
 	
 	// Copy constructor
 	template <class U>
@@ -124,6 +143,7 @@ public:
 			InitialPool = nullptr;
 		}
 	}
+
 
 	// Rebind struct
 	template <class U>
@@ -145,6 +165,9 @@ public:
 		
 	// You can inherit other methods like construct and destroy from std::allocator
 };
+
+
+
 // Comparison operators for compatibility
 template <typename T, typename U>
 inline bool operator==(const IntraTickThreadblindAlloc<T>&, const IntraTickThreadblindAlloc<U>) { return true; }
@@ -152,9 +175,54 @@ inline bool operator==(const IntraTickThreadblindAlloc<T>&, const IntraTickThrea
 template <typename T, typename U>
 inline bool operator!=(const IntraTickThreadblindAlloc<T>&, const IntraTickThreadblindAlloc<U>) { return false; }
 
-//explicit instantiation is a pretty evil way to solve the problem of successfully exporting this class, but I'm exhausted
-//and I still need to test it to see if it's even worth using or actually functional at all.
-template class IntraTickThreadblindAlloc<uint32_t>;
-template class IntraTickThreadblindAlloc<std::vector<uint32_t, IntraTickThreadblindAlloc<uint32_t>>>;
+template <typename T, typename A=IntraTickThreadblindAlloc<T>>
+class DefaultAwareIntraTickAlloc : public A {
+	typedef std::allocator_traits<A> a_t;
+public:
+	template <typename U> struct rebind {
+		using other =
+		  DefaultAwareIntraTickAlloc<
+			U, typename a_t::template rebind_alloc<U>
+		  >;
+	};
 
+	using A::A;
+	
+
+	
+	template <typename U>
+	void construct(U* ptr)
+	  noexcept(std::is_nothrow_default_constructible<U>::value) {
+		::new(static_cast<void*>(ptr)) U;
+	}
+	template <typename U, typename...Args>
+	void construct(U* ptr, Args&&... args) {
+		a_t::construct(static_cast<A&>(*this),
+					   ptr, std::forward<Args>(args)...);
+	}
+};
+
+//THIS ALLOCATOR IS NOT FULLY GENERAL. GOOD LUCK.
+template class IntraTickThreadblindAlloc<uint32_t>;
+
+template class IntraTickThreadblindAlloc<uint64_t>;
+template class IntraTickThreadblindAlloc<std::vector<uint32_t, IntraTickThreadblindAlloc<uint32_t>>>;
+template class IntraTickThreadblindAlloc<std::pair<const uint32_t, uint32_t>>;
+template class IntraTickThreadblindAlloc<std::pair<uint32_t, uint32_t>>;
+
+template class DefaultAwareIntraTickAlloc<uint32_t>; //this is ONLY possible due to the joys of SFINAE.
+template class DefaultAwareIntraTickAlloc<uint64_t>;
+template class DefaultAwareIntraTickAlloc<FPascally_15>;
+template class IntraTickThreadblindAlloc<FPascally_15>;
+
+template class DefaultAwareIntraTickAlloc<FPascally_31>;
+template class IntraTickThreadblindAlloc<FPascally_31>;
+template class IntraTickThreadblindAlloc<std::vector<FPascally_15, IntraTickThreadblindAlloc<FPascally_15>>>;
+template class DefaultAwareIntraTickAlloc<std::vector<FPascally_15, IntraTickThreadblindAlloc<FPascally_15>>>;
+template class IntraTickThreadblindAlloc<std::vector<FPascally_31, IntraTickThreadblindAlloc<FPascally_31>>>;
+template class DefaultAwareIntraTickAlloc<std::vector<FPascally_31, IntraTickThreadblindAlloc<FPascally_31>>>;
+template class DefaultAwareIntraTickAlloc<std::pair<uint32_t, uint32_t>>;
+template class IntraTickThreadblindAlloc<std::vector<uint32_t, DefaultAwareIntraTickAlloc<uint32_t>>>;
+template class IntraTickThreadblindAlloc<struct ska::detailv3::sherwood_v3_entry<struct std::pair<unsigned int,unsigned int> > >;
+template class DefaultAwareIntraTickAlloc<struct ska::detailv3::sherwood_v3_entry<struct std::pair<unsigned int,unsigned int> > >;
 PRAGMA_POP_PLATFORM_DEFAULT_PACKING

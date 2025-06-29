@@ -6,7 +6,7 @@
  * according to the strategy outlined in Kaplan/Zwick, 2009.
  */
 
-#include "softheap.h"
+#include "Structures/softheap.h"
 
 void FSoftheap::destroy_node(node* treenode)
 {

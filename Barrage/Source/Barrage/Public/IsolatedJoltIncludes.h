@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "FBarrageKey.h"
+#include "SkeletonKey.h"
 #include "HAL/Platform.h"
 THIRD_PARTY_INCLUDES_START
 
@@ -18,6 +20,7 @@ PRAGMA_PUSH_PLATFORM_DEFAULT_PACKING
 #include <Jolt/Physics/Collision/BroadPhase/BroadPhase.h>
 #include "Jolt/ConfigurationString.h"
 #include "Jolt/Jolt.h"
+#include "Jolt/Core/QuickSort.h"
 #include "Jolt/RegisterTypes.h"
 #include "Jolt/Core/Factory.h"
 #include "Jolt/Core/JobSystemThreadPool.h"

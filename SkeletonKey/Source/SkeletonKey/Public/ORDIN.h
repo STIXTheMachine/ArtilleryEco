@@ -57,6 +57,7 @@ namespace ORDIN
 		ParticleSystem = EnemyTagState + ORDIN::Step,
 		ProjectileSystem = ParticleSystem + ORDIN::Step,
 		UIECSSystem = ProjectileSystem + ORDIN::Step,
+		EventLogSystem = UIECSSystem + ORDIN::Step,
 		LastSuperstructureKey = ArtilleryOnline + LastSubstrateKey
 	};
 }
