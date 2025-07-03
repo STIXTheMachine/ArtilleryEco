@@ -1,6 +1,9 @@
 # Visual Studio 2015 user specific files
 .vs/
 
+# Riderlink
+Developer/RiderLink/*
+
 # Compiled Object files
 *.slo
 *.lo
@@ -76,3 +79,4 @@ NiagaraUIRenderer/Binaries/Win64/UnrealEditor-NiagaraUIRenderer.exp
 NiagaraUIRenderer/Binaries/Win64/UnrealEditor-NiagaraUIRenderer.pdb
 NiagaraUIRenderer/Binaries/Win64/UnrealEditor-NiagaraUIRendererEditor.exp
 NiagaraUIRenderer/Binaries/Win64/UnrealEditor-NiagaraUIRendererEditor.pdb
+
