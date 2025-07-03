@@ -54,7 +54,7 @@ public:
 	JPH::Quat mThrottleModel = JPH::Quat(100, 100, 100, 100);
 	JPH::Vec3 mLocomotionUpdate = JPH::Vec3::sZero();
 	JPH::Vec3 mForcesUpdate = JPH::Vec3::sZero();
-	JPH::Vec3 mGravity = JPH::Vec3::sZero();
+	JPH::Vec3 mGravity = JPH::Vec3(0, -9.80, 0);
 	JPH::Quat mCapsuleRotationUpdate = JPH::Quat::sIdentity();
 	JPH::Ref<JPH::CharacterVirtual> mCharacter = JPH::Ref<JPH::CharacterVirtual>();
 	float mDeltaTime = 0.01; //set this yourself or have a bad time.
