@@ -23,8 +23,8 @@ void UArtilleryProjectileDispatch::ArtilleryTick()
 bool UArtilleryProjectileDispatch::RegistrationImplementation()
 {
 	// TODO: Can we find and autoload the datatable, or do
-	ProjectileDefinitions = LoadObject<UDataTable>(nullptr, TEXT("DataTable'/Game/DataTables/ProjectileDefinitions.ProjectileDefinitions'"));
-
+	ProjectileDefinitions = LoadObject<UDataTable>(nullptr, GamePath);
+	ProjectileDefinitions = ProjectileDefinitions == nullptr ? LoadObject<UDataTable>(nullptr, EcoPath) : ProjectileDefinitions;
 	UE_LOG(LogTemp, Warning, TEXT("ArtilleryProjectileDispatch:Subsystem: Online"));
 	ProjectileDefinitions->ForeachRow<FProjectileDefinitionRow>(
 		TEXT("UArtilleryProjectileDispatch::PostInitialize"),

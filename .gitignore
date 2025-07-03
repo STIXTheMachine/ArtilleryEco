@@ -72,3 +72,7 @@ Intermediate/*
 
 # Cache files for the editor to use
 DerivedDataCache/*
+NiagaraUIRenderer/Binaries/Win64/UnrealEditor-NiagaraUIRenderer.exp
+NiagaraUIRenderer/Binaries/Win64/UnrealEditor-NiagaraUIRenderer.pdb
+NiagaraUIRenderer/Binaries/Win64/UnrealEditor-NiagaraUIRendererEditor.exp
+NiagaraUIRenderer/Binaries/Win64/UnrealEditor-NiagaraUIRendererEditor.pdb

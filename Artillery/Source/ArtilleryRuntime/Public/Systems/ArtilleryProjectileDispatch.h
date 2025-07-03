@@ -45,7 +45,10 @@ class ARTILLERYRUNTIME_API UArtilleryProjectileDispatch : public UTickableWorldS
 	GENERATED_BODY()
 
 	using ICanReady = ITickHeavy;
-	
+	inline static auto GamePath = TEXT("DataTable'/Game/DataTables/ProjectileDefinitions.ProjectileDefinitions'");
+	//we don't really recommend using this path for long, but we ship with it because we believe you should be
+	//able to run software. I k n o w I'm old fashioned.
+	inline static auto EcoPath = TEXT("DataTable'/Artillery/DataTables/ProjectileDefinitions.ProjectileDefinitions'");
 public:
 	friend class UArtilleryLibrary;
 	static inline UArtilleryProjectileDispatch* SelfPtr = nullptr;
