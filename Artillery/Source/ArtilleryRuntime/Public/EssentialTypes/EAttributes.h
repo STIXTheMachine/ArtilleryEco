@@ -85,7 +85,7 @@ namespace Arty
 	//all because of the bloody Base value meaning that we might have 2 doubles per.
 	//if you want a base, add a base.
 	//Attributes is a UE namespace, so we gotta call this attributeslist. sigh.
-
+	//unfortunately, I don't remember the plan for this. it'll come to me. --jmk
 	namespace AttributesList{
 
 	}
@@ -95,8 +95,8 @@ namespace Arty
 	using Attr = AttribKey;
 	using Ident = E_IdentityAttrib;
 	
-	using FARelatedBy = E_IdentityAttrib;
-	using Attr3 = E_VectorAttrib;
+	typedef E_IdentityAttrib FARelatedBy;
+	typedef E_VectorAttrib Attr3;
 
 	// Entity attribs
 	constexpr AttribKey HEALTH = Arty::AttribKey::Health;
