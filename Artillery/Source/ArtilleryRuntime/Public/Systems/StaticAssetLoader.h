@@ -16,7 +16,12 @@ class UStaticGunLoader : public UGameInstanceSubsystem //note game instance life
 {
 	GENERATED_BODY()
 	
+	inline static auto GamePath = TEXT("DataTable'/Game/DataTables/GunDefinitions.GunDefinitions'");
+	//we don't really recommend using this path for long, but we ship with it because we believe you should be
+	//able to run software. I k n o w I'm old fashioned.
+	inline static auto EcoPath = TEXT("DataTable'/Artillery/DataTables/GunDefinitions.GunDefinitions'");
 public:
+	
 	//If you rename this, it had better be a funnier name than this.
 	TMap<FString, UScriptStruct*> ZardozMapping; //The Gun Is, For Lack Of A Better Term, Good.
 	//I think we should use a skeletonkey here or a tag or SOMETHING. SOMETHING other than a raw-string as the key.
@@ -40,8 +45,8 @@ public:
 	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	FArtilleryGun BaseTypeBinding; //we need this so that we can extract a uclass object for artillerygun
-	
-	virtual FString AssetTable() { return FString(TEXT("DataTable'/Game/DataTables/GunDefinitions.GunDefinitions'")); }
+
+	auto AssetTable() { return GamePath; }
 };
 
 /** We'll be using this UE method. It talks about objects, but that's not UObjects, it's just... objects.

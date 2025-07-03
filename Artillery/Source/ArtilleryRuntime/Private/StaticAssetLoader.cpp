@@ -6,8 +6,20 @@
 void UStaticGunLoader::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);
-	Definitions = Cast<UDataTable>(StaticLoadObject(UDataTable::StaticClass(), nullptr,
-	                                                TEXT("DataTable'/Game/DataTables/GunDefinitions.GunDefinitions'")));
+	auto Seek = StaticLoadObject(UDataTable::StaticClass(), nullptr, AssetTable());
+	if (Seek == nullptr)
+	{
+		Seek = StaticLoadObject(UDataTable::StaticClass(), nullptr, GamePath);
+	}
+	if (Seek == nullptr)
+	{
+		Seek = StaticLoadObject(UDataTable::StaticClass(), nullptr, EcoPath);
+	}
+	if (Seek == nullptr)
+	{
+		throw "Hey, there's no gun data file in any of the places we look.";
+	}
+	Definitions = Cast<UDataTable>(Seek); 
 	Definitions->ForeachRow<FGunDefinitionRow>(
 		TEXT("UStaticGunLoader::Initialize"),
 		[this](const FName& Key, const FGunDefinitionRow& RowDefinition) mutable
