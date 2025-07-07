@@ -54,7 +54,7 @@ public:
 	JPH::Quat mThrottleModel = JPH::Quat(100, 100, 100, 100);
 	JPH::Vec3 mLocomotionUpdate = JPH::Vec3::sZero();
 	JPH::Vec3 mForcesUpdate = JPH::Vec3::sZero();
-	JPH::Vec3 mGravity = JPH::Vec3(0, -9.80, 0);
+	JPH::Vec3 mGravity = JPH::Vec3::sZero();
 	JPH::Quat mCapsuleRotationUpdate = JPH::Quat::sIdentity();
 	JPH::Ref<JPH::CharacterVirtual> mCharacter = JPH::Ref<JPH::CharacterVirtual>();
 	float mDeltaTime = 0.01; //set this yourself or have a bad time.
@@ -73,7 +73,10 @@ protected:
 class BARRAGE_API FWorldSimOwner
 {
 	// If you want your code to compile using single or double precision write 0.0_r to get a Real value that compiles to double or float depending if JPH_DOUBLE_PRECISION is set or not.
+
+
 public:
+	
 	mutable bool Optimized = false;
 	//members are destructed first in, last out.
 	//https://stackoverflow.com/questions/2254263/order-of-member-constructor-and-destructor-calls
@@ -357,4 +360,9 @@ public:
 	~FWorldSimOwner();
 	bool UpdateCharacter(FBPhysicsInput& Update);
 	bool UpdateCharacters(TSharedPtr<TArray<FBPhysicsInput>> Array);
+private:
+	//don't. not unless you understand deeply. that includes me. yes, I know, future jake, you think you're smart.
+	//maybe. but this was a... decision.
+	void AddInternalQueuing(JPH::BodyID ToQueue, uint64 ordinant);
+	
 };

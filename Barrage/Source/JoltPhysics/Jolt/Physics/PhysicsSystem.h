@@ -56,7 +56,7 @@ public:
 	/// @param inBroadPhaseLayerInterface Information on the mapping of object layers to broad phase layers. Since this is a virtual interface, the instance needs to stay alive during the lifetime of the PhysicsSystem.
 	/// @param inObjectVsBroadPhaseLayerFilter Filter callback function that is used to determine if an object layer collides with a broad phase layer. Since this is a virtual interface, the instance needs to stay alive during the lifetime of the PhysicsSystem.
 	/// @param inObjectLayerPairFilter Filter callback function that is used to determine if two object layers collide. Since this is a virtual interface, the instance needs to stay alive during the lifetime of the PhysicsSystem.
-	void						Init(uint inMaxBodies, uint inNumBodyMutexes, uint inMaxBodyPairs, uint inMaxContactConstraints, const BroadPhaseLayerInterface &inBroadPhaseLayerInterface, const ObjectVsBroadPhaseLayerFilter &inObjectVsBroadPhaseLayerFilter, const ObjectLayerPairFilter &inObjectLayerPairFilter, BroadPhase * BindBroadphase = nullptr);
+	void						Init(uint inMaxBodies, uint inNumBodyMutexes, uint inMaxBodyPairs, uint inMaxContactConstraints, const BroadPhaseLayerInterface &inBroadPhaseLayerInterface, const ObjectVsBroadPhaseLayerFilter &inObjectVsBroadPhaseLayerFilter, const ObjectLayerPairFilter &inObjectLayerPairFilter);
 
 	/// Listener that is notified whenever a body is activated/deactivated
 	void						SetBodyActivationListener(BodyActivationListener *inListener) { mBodyManager.SetBodyActivationListener(inListener); }
@@ -76,9 +76,6 @@ public:
 	void						SetCombineFriction(ContactConstraintManager::CombineFunction inCombineFriction) { mContactManager.SetCombineFriction(inCombineFriction); }
 	ContactConstraintManager::CombineFunction GetCombineFriction() const					{ return mContactManager.GetCombineFriction(); }
 
-
-	/// The body manager keeps track which bodies are in the simulation
-	BodyManager					mBodyManager;
 	/// Set the function that combines the restitution of two bodies and returns it
 	/// Default method is max(restitution1, restitution1)
 	void						SetCombineRestitution(ContactConstraintManager::CombineFunction inCombineRestitution) { mContactManager.SetCombineRestitution(inCombineRestitution); }
@@ -203,6 +200,12 @@ public:
 	/// Returns a locking interface that locks the body so other threads cannot modify it.
 	inline const BodyLockInterfaceLocking &	GetBodyLockInterface() const					{ return mBodyLockInterfaceLocking; }
 
+	/// Broadphase layer filter that decides if two objects can collide, this was passed to the Init function.
+	const ObjectVsBroadPhaseLayerFilter &GetObjectVsBroadPhaseLayerFilter() const			{ return *mObjectVsBroadPhaseLayerFilter; }
+
+	/// Object layer filter that decides if two objects can collide, this was passed to the Init function.
+	const ObjectLayerPairFilter &GetObjectLayerPairFilter() const							{ return *mObjectLayerPairFilter; }
+
 	/// Get an broadphase layer filter that uses the default pair filter and a specified object layer to determine if broadphase layers collide
 	DefaultBroadPhaseLayerFilter GetDefaultBroadPhaseLayerFilter(ObjectLayer inLayer) const	{ return DefaultBroadPhaseLayerFilter(*mObjectVsBroadPhaseLayerFilter, inLayer); }
 
@@ -318,7 +321,8 @@ private:
 	/// Object layer filter that decides if two objects can collide
 	const ObjectLayerPairFilter *mObjectLayerPairFilter = nullptr;
 
-
+	/// The body manager keeps track which bodies are in the simulation
+	BodyManager					mBodyManager;
 
 	/// Body locking interfaces
 	BodyLockInterfaceNoLock		mBodyLockInterfaceNoLock { mBodyManager };

@@ -19,7 +19,8 @@ enum PhysicsInputType
 	//y: gravity
 	//z: locomotion (self-directed thrust generated as part of the core movement model)
 	//w: forces (thrust applied by abilities, including jump or dash)
-	Throttle
+	Throttle,
+	ADD
 };
 
 enum FBShape

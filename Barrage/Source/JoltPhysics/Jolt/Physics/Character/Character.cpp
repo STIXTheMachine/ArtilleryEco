@@ -281,7 +281,9 @@ RMat44 Character::GetWorldTransform(bool inLockBodies) const
 
 void Character::SetLayer(ObjectLayer inLayer, bool inLockBodies)
 {
-	throw;
+	mLayer = inLayer;
+
+	sCharacterGetBodyInterface(mSystem, inLockBodies).SetObjectLayer(mBodyID, inLayer);
 }
 
 bool Character::SetShape(const Shape *inShape, float inMaxPenetrationDepth, bool inLockBodies)
@@ -326,6 +328,27 @@ bool Character::SetShape(const Shape *inShape, float inMaxPenetrationDepth, bool
 TransformedShape Character::GetTransformedShape(bool inLockBodies) const
 {
 	return sCharacterGetBodyInterface(mSystem, inLockBodies).GetTransformedShape(mBodyID);
+}
+
+CharacterSettings Character::GetCharacterSettings(bool inLockBodies) const
+{
+	BodyLockRead lock(sCharacterGetBodyLockInterface(mSystem, inLockBodies), mBodyID);
+	JPH_ASSERT(lock.Succeeded());
+	const Body &body = lock.GetBody();
+
+	CharacterSettings settings;
+	settings.mUp = mUp;
+	settings.mSupportingVolume = mSupportingVolume;
+	settings.mMaxSlopeAngle = ACos(mCosMaxSlopeAngle);
+	settings.mEnhancedInternalEdgeRemoval = body.GetEnhancedInternalEdgeRemoval();
+	settings.mShape = mShape;
+	settings.mLayer = mLayer;
+	const MotionProperties *mp = body.GetMotionProperties();
+	settings.mMass = 1.0f / mp->GetInverseMass();
+	settings.mFriction = body.GetFriction();
+	settings.mGravityFactor = mp->GetGravityFactor();
+	settings.mAllowedDOFs = mp->GetAllowedDOFs();
+	return settings;
 }
 
 JPH_NAMESPACE_END

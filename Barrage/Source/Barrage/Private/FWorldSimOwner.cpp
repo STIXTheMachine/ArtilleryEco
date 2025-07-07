@@ -308,8 +308,15 @@ inline FBarrageKey FWorldSimOwner::CreatePrimitive(FBBoxParams& ToCreate, uint16
 	Body* box_body = body_interface->CreateBody(box_body_settings);
 	// Note that if we run out of bodies this can return nullptr
 
-	// Add it to the world
-	body_interface->AddBody(box_body->GetID(), EActivation::Activate);
+	// Queue adding it
+	AddInternalQueuing(box_body->GetID(), 0);// oh no. yeah this is.... this is for batching the add.
+															//but really, we'd like to batch create.
+															//but we can't do that without both proof that it's slow this way
+															//and redoing barragekeys so that they aren't reversible with bodyIDs.
+															//this is because we need the barrage key so stuff can queue operations against the primitive...
+															//and without create, we don't have a bodyID. in fact, there's not a body at all yet.
+															//this isn't a hard change, but it's a SERIOUS breaking change. we need more evidence before committing.
+															// IMPORTANT. REVISIT. THAT MEANS YOU. WHOEVER YOU ARE.
 	BodyID BodyIDTemp = box_body->GetID();
 	FBarrageKey FBK = GenerateBarrageKeyFromBodyId(BodyIDTemp);
 	//Barrage key is unique to WORLD and BODY. This is crushingly important.
@@ -335,6 +342,7 @@ inline FBarrageKey FWorldSimOwner::CreatePrimitive(FBCharParams& ToCreate, uint1
 	NewCharacter->mForcesUpdate = Vec3::sZero();
 	// Create the shape
 	BodyID BodyIDTemp = NewCharacter->Create(&this->CharacterVsCharacterCollisionSimple);
+	//AddInternalQueuing(BodyIDTemp, 0);// we can't figure this out yet. we'll have to set it later or rearch for data exposure reasons. --JMK, can kicka
 	//Barrage key is unique to WORLD and BODY. This is crushingly important.
 	FBarrageKey FBK = GenerateBarrageKeyFromBodyId(BodyIDTemp);
 	BarrageToJoltMapping->insert(FBK, BodyIDTemp);
@@ -351,7 +359,8 @@ inline FBarrageKey FWorldSimOwner::CreatePrimitive(FBSphereParams& ToCreate, uin
 	                                     MovementType,
 	                                     Layer);
 	sphere_settings.mIsSensor = IsSensor;
-	BodyID BodyIDTemp = body_interface->CreateAndAddBody(sphere_settings, EActivation::Activate);
+	BodyID BodyIDTemp = body_interface->CreateBody(sphere_settings)->GetID();
+	AddInternalQueuing(BodyIDTemp, 0);// we can't figure this out yet. we'll have to set it later or rearch for data exposure reasons. --JMK, can kicka
 	FBarrageKey FBK = GenerateBarrageKeyFromBodyId(BodyIDTemp);
 	//Barrage key is unique to WORLD and BODY. This is crushingly important.
 	BarrageToJoltMapping->insert(FBK, BodyIDTemp);
@@ -371,7 +380,8 @@ inline FBarrageKey FWorldSimOwner::CreatePrimitive(FBCapParams& ToCreate, uint16
 	cap_settings.mMassPropertiesOverride = msp;
 	cap_settings.mOverrideMassProperties = JPH::EOverrideMassProperties::CalculateInertia;
 	cap_settings.mIsSensor = IsSensor;
-	BodyID BodyIDTemp = body_interface->CreateAndAddBody(cap_settings, EActivation::Activate);
+	BodyID BodyIDTemp = body_interface->CreateBody(cap_settings)->GetID();
+	AddInternalQueuing(BodyIDTemp, 0);// You know, it feels worse each time I use it.
 	FBarrageKey FBK = GenerateBarrageKeyFromBodyId(BodyIDTemp);
 	//Barrage key is unique to WORLD and BODY. This is crushingly important.
 	BarrageToJoltMapping->insert(FBK, BodyIDTemp);
@@ -479,7 +489,8 @@ FBLet FWorldSimOwner::LoadComplexStaticMesh(FBTransform& MeshTransform,
 
 		Ref<Shape> OriginAndRotationApplied = new RotatedTranslatedShape(CoordinateUtils::ToJoltCoordinates(MeshTransform.GetLocation()), CoordinateUtils::ToJoltRotation(MeshTransform.GetRotationQuat()),  result.Get());
 		creation_settings.SetShape(OriginAndRotationApplied);
-		BodyID bID = body_interface->CreateAndAddBody(creation_settings, EActivation::Activate);
+		BodyID bID = body_interface->CreateBody(creation_settings)->GetID();
+		AddInternalQueuing(bID, 0);// You know that scene where data tries alcohol, hates it, and immediately orders another?
 		FBarrageKey FBK = GenerateBarrageKeyFromBodyId(bID);
 		BarrageToJoltMapping->insert(FBK, bID);
 		FBLet shared = MakeShareable(new FBarragePrimitive(FBK, Outkey));
@@ -544,6 +555,14 @@ FWorldSimOwner::~FWorldSimOwner()
 	Allocator.Reset();
 }
 
+
+void FWorldSimOwner::AddInternalQueuing(JPH::BodyID ToQueue, uint64 ordinant)
+{
+	//oh boy. ohhhhh boy. oh boy oh boy oh boy oh boy. we have made the big strangeness now.
+	//TODO: does this need a hold open? dear god in heaven.
+	ThreadAcc[MyBARRAGEIndex].Queue->Enqueue(
+					FBPhysicsInput(ToQueue, ordinant, PhysicsInputType::ADD)); // oh boy. hhoo. this is NOT good. see fun story. you only need the ids to do adds.
+}
 bool FWorldSimOwner::UpdateCharacter(FBPhysicsInput& Update)
 {
 	FBarrageKey key = Update.Target;

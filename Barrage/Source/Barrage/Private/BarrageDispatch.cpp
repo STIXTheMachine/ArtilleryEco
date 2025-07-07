@@ -11,7 +11,8 @@
 
 bool UBarrageDispatch::RegistrationImplementation()
 {
-	FScopeLock GrantFeedLock(&MultiAccLock);//locks the job system's threads on the grant worker func until we're spun up.
+	FScopeLock GrantFeedLock(&MultiAccLock);
+	//locks the job system's threads on the grant worker func until we're spun up.
 	UE_LOG(LogTemp, Warning, TEXT("Barrage:Subsystem: Online"));
 	for (TSharedPtr<TArray<FBLet>>& TombFibletArray : Tombs)
 	{
@@ -51,13 +52,13 @@ void UBarrageDispatch::GrantWorkerFeed(int MyThreadIndex)
 
 void UBarrageDispatch::GrantClientFeed()
 {
-		FScopeLock GrantFeedLock(&GrowOnlyAccLock);
+	FScopeLock GrantFeedLock(&GrowOnlyAccLock);
 
-		//TODO: expand if we need for rollback powers. could be sliiiick
-		JoltGameSim->ThreadAcc[ThreadAccTicker] = FWorldSimOwner::FBInputFeed(std::this_thread::get_id(), 8192);
+	//TODO: expand if we need for rollback powers. could be sliiiick
+	JoltGameSim->ThreadAcc[ThreadAccTicker] = FWorldSimOwner::FBInputFeed(std::this_thread::get_id(), 8192);
 
-		MyBARRAGEIndex = ThreadAccTicker;
-		++ThreadAccTicker;
+	MyBARRAGEIndex = ThreadAccTicker;
+	++ThreadAccTicker;
 }
 
 UBarrageDispatch::UBarrageDispatch()
@@ -91,7 +92,7 @@ void UBarrageDispatch::Deinitialize()
 	{
 		TombFibletArray = nullptr;
 	}
-	
+
 	TSharedPtr<TransformUpdatesForGameThread> HoldOpen = GameTransformPump;
 	GameTransformPump = nullptr;
 	if (HoldOpen)
@@ -99,7 +100,9 @@ void UBarrageDispatch::Deinitialize()
 		if (HoldOpen.GetSharedReferenceCount() > 1)
 		{
 			UE_LOG(LogTemp, Warning,
-			       TEXT("Hey, so something's holding live references to the queue. Maybe. Shared Ref Count is not reliable."));
+			       TEXT(
+				       "Hey, so something's holding live references to the queue. Maybe. Shared Ref Count is not reliable."
+			       ));
 		}
 		HoldOpen->Empty();
 	}
@@ -112,7 +115,9 @@ void UBarrageDispatch::Deinitialize()
 		if (HoldOpen2.GetSharedReferenceCount() > 1)
 		{
 			UE_LOG(LogTemp, Warning,
-				   TEXT("Hey, so something's holding live references to the contact queue. Maybe. Shared Ref Count is not reliable."));
+			       TEXT(
+				       "Hey, so something's holding live references to the contact queue. Maybe. Shared Ref Count is not reliable."
+			       ));
 		}
 		HoldOpen2->Empty();
 	}
@@ -130,14 +135,16 @@ void UBarrageDispatch::SphereCast(
 	const JPH::BodyFilter& BodiesFilter,
 	uint64_t timestamp)
 {
-	if(!CastFrom.ContainsNaN())
+	if (!CastFrom.ContainsNaN())
 	{
-		JoltGameSim->SphereCast(Radius, Distance, CastFrom, Direction, OutHit, BroadPhaseFilter, ObjectFilter, BodiesFilter);
+		JoltGameSim->SphereCast(Radius, Distance, CastFrom, Direction, OutHit, BroadPhaseFilter, ObjectFilter,
+		                        BodiesFilter);
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("Attempted to SphereCast with a NaN value in the CastFrom position! [%s]"), *CastFrom.ToString());
-	} 
+		UE_LOG(LogTemp, Error, TEXT("Attempted to SphereCast with a NaN value in the CastFrom position! [%s]"),
+		       *CastFrom.ToString());
+	}
 }
 
 void UBarrageDispatch::SphereSearch(
@@ -151,11 +158,13 @@ void UBarrageDispatch::SphereSearch(
 	TArray<uint32>& OutFoundObjects)
 {
 	JPH::BodyID CastingBodyID;
-	if(!JoltGameSim->BarrageToJoltMapping->find(ShapeSource, CastingBodyID))
+	if (!JoltGameSim->BarrageToJoltMapping->find(ShapeSource, CastingBodyID))
 	{
-		CastingBodyID = JPH::BodyID(); // invalid BUT characters HAVE NO FLESSSSSSSH BLEHHHHHH (seriously, without an inner shape, they lack a body)
+		CastingBodyID = JPH::BodyID();
+		// invalid BUT characters HAVE NO FLESSSSSSSH BLEHHHHHH (seriously, without an inner shape, they lack a body)
 	}
-	JoltGameSim->SphereSearch(CastingBodyID, Location, Radius, BroadPhaseFilter, ObjectFilter, BodiesFilter, OutFoundObjectCount, OutFoundObjects);
+	JoltGameSim->SphereSearch(CastingBodyID, Location, Radius, BroadPhaseFilter, ObjectFilter, BodiesFilter,
+	                          OutFoundObjectCount, OutFoundObjects);
 }
 
 void UBarrageDispatch::CastRay(
@@ -177,7 +186,8 @@ void UBarrageDispatch::CastRay(
 //this is because over time, the needs of these classes may diverge and multiply
 //and it's not clear to me that Shapefulness is going to actually be the defining shared
 //feature. I'm going to wait to refactor the types until testing is complete.
-FBLet UBarrageDispatch::CreatePrimitive(FBBoxParams& Definition, FSkeletonKey OutKey, uint16_t Layer, bool isSensor, bool forceDynamic, bool isMovable)
+FBLet UBarrageDispatch::CreatePrimitive(FBBoxParams& Definition, FSkeletonKey OutKey, uint16_t Layer, bool isSensor,
+                                        bool forceDynamic, bool isMovable)
 {
 	if (JoltGameSim)
 	{
@@ -218,7 +228,8 @@ FBLet UBarrageDispatch::CreatePrimitive(FBSphereParams& Definition, FSkeletonKey
 	return nullptr;
 }
 
-FBLet UBarrageDispatch::CreatePrimitive(FBCapParams& Definition, FSkeletonKey OutKey, uint16 Layer, bool isSensor, FMassByCategory::BMassCategories MassClass)
+FBLet UBarrageDispatch::CreatePrimitive(FBCapParams& Definition, FSkeletonKey OutKey, uint16 Layer, bool isSensor,
+                                        FMassByCategory::BMassCategories MassClass)
 {
 	if (JoltGameSim)
 	{
@@ -235,7 +246,7 @@ FBLet UBarrageDispatch::ManagePointers(FSkeletonKey OutKey, FBarrageKey temp, FB
 	//it basically ensures that you will get turned into a pillar of salt.
 	FBLet indirect = MakeShareable(new FBarragePrimitive(temp, OutKey));
 	indirect->Me = form;
-	JoltBodyLifecycleMapping->insert_or_assign (indirect->KeyIntoBarrage, indirect);
+	JoltBodyLifecycleMapping->insert_or_assign(indirect->KeyIntoBarrage, indirect);
 	TranslationMapping->insert_or_assign(indirect->KeyOutOfBarrage, indirect->KeyIntoBarrage);
 	return indirect;
 }
@@ -249,7 +260,7 @@ FBLet UBarrageDispatch::LoadComplexStaticMesh(FBTransform& MeshTransform,
 	if (JoltGameSim)
 	{
 		FBLet shared = JoltGameSim->LoadComplexStaticMesh(MeshTransform, StaticMeshComponent, OutKey);
-		if(shared)
+		if (shared)
 		{
 			JoltBodyLifecycleMapping->insert_or_assign(shared->KeyIntoBarrage, shared);
 			TranslationMapping->insert_or_assign(OutKey, shared->KeyIntoBarrage);
@@ -277,6 +288,7 @@ FBLet UBarrageDispatch::GetShapeRef(FBarrageKey Existing) const
 	//TODO: This line feels SUSPICIOUS!
 	return holdopen && holdopen->find(Existing, out) ? out : nullptr;
 }
+
 FBLet UBarrageDispatch::GetShapeRef(FSkeletonKey Existing) const
 {
 	//SharedPTR's def val is nullptr. this will return nullptr as soon as entomb succeeds.
@@ -288,18 +300,18 @@ FBLet UBarrageDispatch::GetShapeRef(FSkeletonKey Existing) const
 	//3) you get a valid shared pointer which will hold the asset open until you're done, but the markings are being set
 	//this means your calls will all succeed but none will be applied during the apply shadow phase.
 	TSharedPtr<KeyToKey> holdopen = TranslationMapping;
-	if(holdopen)
+	if (holdopen)
 	{
 		FBarrageKey key = 0;
-		if(holdopen->find(Existing, key))
+		if (holdopen->find(Existing, key))
 		{
 			TSharedPtr<KeyToFBLet> HoldMapping = JoltBodyLifecycleMapping;
 			if (HoldMapping)
 			{
 				FBLet deref;
-				if(HoldMapping->find(key, deref))
+				if (HoldMapping->find(key, deref))
 				{
-					if (FBarragePrimitive::IsNotNull(deref))//broken out to ease debug.
+					if (FBarragePrimitive::IsNotNull(deref)) //broken out to ease debug.
 					{
 						return deref;
 					}
@@ -323,61 +335,97 @@ TStatId UBarrageDispatch::GetStatId() const
 	RETURN_QUICK_DECLARE_CYCLE_STAT(UBarrageDispatch, STATGROUP_Tickables);
 }
 
-void UBarrageDispatch::StackUp() const
+void UBarrageDispatch::StackUp()
 {
-	//currently, these are only characters but that could change. This would likely become a TMap then but maybe not.
+	uint16_t RefilledUpTo = 0;
+	uint16_t Adding = 0;
 	if (JoltGameSim)
 	{
+		//accumulate.
 		for (FWorldSimOwner::FBInputFeed WorldSimOwnerFeedMap : JoltGameSim->ThreadAcc)
 		{
 			//the threadmaps themselves are always allocated, but they may not be "valid"
 			const TSharedPtr<FWorldSimOwner::FBInputFeed::ThreadFeed> HoldOpenThreadQueue = WorldSimOwnerFeedMap.Queue;
-			if (WorldSimOwnerFeedMap.Queue && ((HoldOpenThreadQueue != nullptr)) && WorldSimOwnerFeedMap.That != std::thread::id()) //if there IS a thread.
+			if (WorldSimOwnerFeedMap.Queue && ((HoldOpenThreadQueue != nullptr)) && WorldSimOwnerFeedMap.That !=
+				std::thread::id()) //if there IS a thread.
 			{
 				while (HoldOpenThreadQueue.Get() && !HoldOpenThreadQueue->IsEmpty())
 				{
 					const FBPhysicsInput* input = HoldOpenThreadQueue->Peek();
+					InternalSortableSet[RefilledUpTo] = *input;
 
-					JPH::BodyID result;
-					const bool bID = JoltGameSim->BarrageToJoltMapping->find(input->Target, result);
-					if (bID && input->metadata == FBShape::Character)
-					{
-						UpdateCharacter(const_cast<FBPhysicsInput&>(*input));
-					}
-
-					if (bID && !result.IsInvalid() && input->metadata != FBShape::Character)
-					{
-						JPH::BodyInterface* BodyInt = JoltGameSim->body_interface;
-						switch (input->Action)
-						{
-						case PhysicsInputType::Rotation:
-							//prolly gonna wanna change this to add torque................... not sure.
-							BodyInt->SetRotation(result, input->State, JPH::EActivation::Activate);
-							break;
-						case PhysicsInputType::OtherForce:
-							BodyInt->AddForce(result, input->State.GetXYZ(), JPH::EActivation::Activate);
-							break;
-						case PhysicsInputType::Velocity:
-							BodyInt->SetLinearVelocity(result, input->State.GetXYZ());
-							break;
-						case PhysicsInputType::SetPosition:
-							BodyInt->SetPosition(result, input->State.GetXYZ(), JPH::EActivation::Activate);
-							break;
-						case PhysicsInputType::SelfMovement:
-							BodyInt->AddForce(result, input->State.GetXYZ(), JPH::EActivation::Activate);
-							break;
-						case PhysicsInputType::AIMovement:
-							BodyInt->AddForce(result, input->State.GetXYZ(), JPH::EActivation::Activate);
-							break;
-						case PhysicsInputType::SetGravityFactor:
-							BodyInt->SetGravityFactor(result, input->State.GetZ());
-							break;
-						default:
-							UE_LOG(LogTemp, Warning, TEXT("UBarrageDispatch::StackUp: Unimplemented handling for input action [%d]"), input->Action);
-						}
-					}
-					
+					++RefilledUpTo;
 					HoldOpenThreadQueue->Dequeue();
+				}
+			}
+		}
+
+		//process.
+		for (int i = 0; i < RefilledUpTo; ++i)
+		{
+			auto& input = InternalSortableSet[i];
+			//handle adds first!
+			if (input.Action == PhysicsInputType::ADD)
+			{
+				Adds[Adding] = JPH::BodyID(input.Target.KeyIntoBarrage); // oh JESUS
+				++Adding;
+			}
+		}
+		// std::sort(Adds.data(), Adding....); add sort here once we have our ordering worked out.
+
+		JPH::BodyInterface* BodyInt = JoltGameSim->body_interface;
+		//adding in one batch MASSIVELY reduces thread contention and the amount of quadtree messiness.
+		//it'd be honestly nice to batch the creation as well, but that hasn't actually been showing up in
+		//our execution cost metrics. instead, I think we're just getting be-beefed by the mess.
+		if (Adding)
+		{
+			JPH::BodyInterface::AddState state = BodyInt->AddBodiesPrepare(Adds.data(), Adding);
+			BodyInt->AddBodiesFinalize(Adds.data(), Adding, state, JPH::EActivation::Activate);
+		}
+		for (int i = 0; i < RefilledUpTo; ++i)
+		{
+			auto& input = InternalSortableSet[i];
+			JPH::BodyID result;
+			const bool bID = JoltGameSim->BarrageToJoltMapping->find(input.Target, result);
+			if (bID && input.metadata == FBShape::Character)
+			{
+				UpdateCharacter(const_cast<FBPhysicsInput&>(input));
+			}
+
+			if (bID && !result.IsInvalid() && input.metadata != FBShape::Character)
+			{
+				switch (input.Action)
+				{
+				case PhysicsInputType::ADD:
+					//in retrospect, this should have just added another bloody queue set. ugh.
+					//skip, already handled.
+					break;
+				case PhysicsInputType::Rotation:
+					//prolly gonna wanna change this to add torque................... not sure.
+					BodyInt->SetRotation(result, input.State, JPH::EActivation::Activate);
+					break;
+				case PhysicsInputType::OtherForce:
+					BodyInt->AddForce(result, input.State.GetXYZ(), JPH::EActivation::Activate);
+					break;
+				case PhysicsInputType::Velocity:
+					BodyInt->SetLinearVelocity(result, input.State.GetXYZ());
+					break;
+				case PhysicsInputType::SetPosition:
+					BodyInt->SetPosition(result, input.State.GetXYZ(), JPH::EActivation::Activate);
+					break;
+				case PhysicsInputType::SelfMovement:
+					BodyInt->AddForce(result, input.State.GetXYZ(), JPH::EActivation::Activate);
+					break;
+				case PhysicsInputType::AIMovement:
+					BodyInt->AddForce(result, input.State.GetXYZ(), JPH::EActivation::Activate);
+					break;
+				case PhysicsInputType::SetGravityFactor:
+					BodyInt->SetGravityFactor(result, input.State.GetZ());
+					break;
+				default:
+					UE_LOG(LogTemp, Warning,
+					       TEXT("UBarrageDispatch::StackUp: Unimplemented handling for input action [%d]"),
+					       input.Action);
 				}
 			}
 		}
@@ -397,38 +445,38 @@ bool UBarrageDispatch::UpdateCharacter(FBPhysicsInput& CharacterInput) const
 void UBarrageDispatch::StepWorld(uint64 Time, uint64_t TickCount)
 {
 	TSharedPtr<FWorldSimOwner> PinSim = JoltGameSim;
-			
+
 	TRACE_CPUPROFILER_EVENT_SCOPE_STR("Step World");
 	if (this && JoltGameSim && PinSim)
 	{
-		if(TickCount % 128 == 0)
-		{	
+		if (TickCount % 128 == 0)
+		{
 			//TRACE_CPUPROFILER_EVENT_SCOPE_STR("Broadphase Optimize");
 			PinSim->OptimizeBroadPhase();
 		}
-		
+
 		CleanTombs();
 		PinSim->StepSimulation();
 		TSharedPtr<TMap<FBarrageKey, TSharedPtr<FBCharacterBase>>> HoldOpenCharacters = PinSim->CharacterToJoltMapping;
-		if(HoldOpenCharacters)
+		if (HoldOpenCharacters)
 		{
 			// ReSharper disable once CppTemplateArgumentsCanBeDeduced - disabled to clear warning that causes compiler error if "fixed"
-			for(TTuple<FBarrageKey, TSharedPtr<FBCharacterBase>> CharacterKeyAndBase : *HoldOpenCharacters)
+			for (TTuple<FBarrageKey, TSharedPtr<FBCharacterBase>> CharacterKeyAndBase : *HoldOpenCharacters)
 			{
 				if (CharacterKeyAndBase.Value->mCharacter)
 				{
 					if (CharacterKeyAndBase.Value->mCharacter->GetPosition().IsNaN())
 					{
-						CharacterKeyAndBase.Value->mCharacter->SetLinearVelocity(CharacterKeyAndBase.Value->World->GetGravity());
+						CharacterKeyAndBase.Value->mCharacter->SetLinearVelocity(
+							CharacterKeyAndBase.Value->World->GetGravity());
 						CharacterKeyAndBase.Value->mCharacter->SetPosition(CharacterKeyAndBase.Value->mInitialPosition);
 						CharacterKeyAndBase.Value->mForcesUpdate = CharacterKeyAndBase.Value->World->GetGravity();
-						
 					}
 					CharacterKeyAndBase.Value->StepCharacter();
 				}
 			}
 		}
-		
+
 		{
 			TRACE_CPUPROFILER_EVENT_SCOPE_STR("Jolt Body Lifecycle Update");
 			//maintain tombstones
@@ -449,7 +497,8 @@ void UBarrageDispatch::StepWorld(uint64 Time, uint64_t TickCount)
 							FBarragePrimitive::TryUpdateTransformFromJolt(HoldOpenFBP, Time);
 							//returns a bool that can be used for debug.
 						} //This checks for != null && tombstoned
-						else if(HoldOpenFBP && HoldOpenFBP->tombstone != 0 && Tombs[TombOffset]) //just to make it explicit.
+						else if (HoldOpenFBP && HoldOpenFBP->tombstone != 0 && Tombs[TombOffset])
+						//just to make it explicit.
 						{
 							//TODO: MAY NOT BE THREADSAFE. CHECK NLT 10/5/24
 							Tombs[TombOffset]->Push(HoldOpenFBP);
@@ -463,13 +512,13 @@ void UBarrageDispatch::StepWorld(uint64 Time, uint64_t TickCount)
 
 bool UBarrageDispatch::BroadcastContactEvents() const
 {
-	if(GetWorld())
+	if (GetWorld())
 	{
 		TSharedPtr<TCircularQueue<BarrageContactEvent>> HoldOpen = ContactEventPump;
-		while(HoldOpen && !HoldOpen->IsEmpty())
+		while (HoldOpen && !HoldOpen->IsEmpty())
 		{
 			const BarrageContactEvent* Update = HoldOpen->Peek();
-			if(Update)
+			if (Update)
 			{
 				try
 				{
@@ -501,33 +550,43 @@ bool UBarrageDispatch::BroadcastContactEvents() const
 	return false;
 }
 
-inline BarrageContactEvent ConstructContactEvent(EBarrageContactEventType EventType, UBarrageDispatch* BarrageDispatch, const JPH::Body& inBody1, const JPH::Body& inBody2, const JPH::ContactManifold& inManifold,
+inline BarrageContactEvent ConstructContactEvent(EBarrageContactEventType EventType, UBarrageDispatch* BarrageDispatch,
+                                                 const JPH::Body& inBody1, const JPH::Body& inBody2,
+                                                 const JPH::ContactManifold& inManifold,
                                                  JPH::ContactSettings& ioSettings)
 {
-	return BarrageContactEvent(EventType, BarrageContactEntity(BarrageDispatch->GenerateBarrageKeyFromBodyId(inBody1.GetID()), inBody1), BarrageContactEntity(BarrageDispatch->GenerateBarrageKeyFromBodyId(inBody2.GetID()), inBody2));
+	return BarrageContactEvent(
+		EventType, BarrageContactEntity(BarrageDispatch->GenerateBarrageKeyFromBodyId(inBody1.GetID()), inBody1),
+		BarrageContactEntity(BarrageDispatch->GenerateBarrageKeyFromBodyId(inBody2.GetID()), inBody2));
 }
 
-void UBarrageDispatch::HandleContactAdded(const JPH::Body& inBody1, const JPH::Body& inBody2, const JPH::ContactManifold& inManifold,
-									JPH::ContactSettings& ioSettings)
+void UBarrageDispatch::HandleContactAdded(const JPH::Body& inBody1, const JPH::Body& inBody2,
+                                          const JPH::ContactManifold& inManifold,
+                                          JPH::ContactSettings& ioSettings)
 {
-		BarrageContactEvent ContactEventToEnqueue = ConstructContactEvent(EBarrageContactEventType::ADDED, this, inBody1, inBody2, inManifold, ioSettings);
-		ContactEventPump->Enqueue(ContactEventToEnqueue);
+	BarrageContactEvent ContactEventToEnqueue = ConstructContactEvent(EBarrageContactEventType::ADDED, this, inBody1,
+	                                                                  inBody2, inManifold, ioSettings);
+	ContactEventPump->Enqueue(ContactEventToEnqueue);
 }
-void UBarrageDispatch::HandleContactPersisted(const JPH::Body& inBody1, const JPH::Body& inBody2, const JPH::ContactManifold& inManifold,
-									JPH::ContactSettings& ioSettings)
+
+void UBarrageDispatch::HandleContactPersisted(const JPH::Body& inBody1, const JPH::Body& inBody2,
+                                              const JPH::ContactManifold& inManifold,
+                                              JPH::ContactSettings& ioSettings)
 {
-		BarrageContactEvent ContactEventToEnqueue = ConstructContactEvent(EBarrageContactEventType::PERSISTED, this, inBody1, inBody2, inManifold, ioSettings);
-		ContactEventPump->Enqueue(ContactEventToEnqueue);
+	BarrageContactEvent ContactEventToEnqueue = ConstructContactEvent(EBarrageContactEventType::PERSISTED, this,
+	                                                                  inBody1, inBody2, inManifold, ioSettings);
+	ContactEventPump->Enqueue(ContactEventToEnqueue);
 }
+
 void UBarrageDispatch::HandleContactRemoved(const JPH::SubShapeIDPair& inSubShapePair) const
 {
 	FBarrageKey BK1 = this->GenerateBarrageKeyFromBodyId(inSubShapePair.GetBody1ID());
 	FBarrageKey BK2 = this->GenerateBarrageKeyFromBodyId(inSubShapePair.GetBody2ID());
 	BarrageContactEvent ContactEventToEnqueue(
-	EBarrageContactEventType::REMOVED,
-	BarrageContactEntity(BK1),
-	BarrageContactEntity(BK2));
-			ContactEventPump->Enqueue(ContactEventToEnqueue);
+		EBarrageContactEventType::REMOVED,
+		BarrageContactEntity(BK1),
+		BarrageContactEntity(BK2));
+	ContactEventPump->Enqueue(ContactEventToEnqueue);
 }
 
 FBarrageKey UBarrageDispatch::GenerateBarrageKeyFromBodyId(const JPH::BodyID& Input) const
@@ -570,7 +629,8 @@ JPH::IgnoreSingleBodyFilter UBarrageDispatch::GetFilterToIgnoreSingleBody(const 
 //Bounds are OPAQUE. do not reference them. they are protected for a reason, because they are
 //subject to semantic changes. the Point is left in the UE space. 
 FBBoxParams FBarrageBounder::GenerateBoxBounds(const FVector3d& point, double xDiam,
-                                               double yDiam, double zDiam, const FVector3d& OffsetCenterToMatchBoundedShape,
+                                               double yDiam, double zDiam,
+                                               const FVector3d& OffsetCenterToMatchBoundedShape,
                                                FMassByCategory::BMassCategories MyMassClass)
 {
 	FBBoxParams blob;
@@ -609,7 +669,8 @@ FBCapParams FBarrageBounder::GenerateCapsuleBounds(const UE::Geometry::FCapsule3
 
 //Bounds are OPAQUE. do not reference them. they are protected for a reason, because they are
 //subject to change. the Point is left in the UE space, signified by the UE type. 
-FBCharParams FBarrageBounder::GenerateCharacterBounds(const FVector3d& point, double radius, double extent, double speed)
+FBCharParams FBarrageBounder::GenerateCharacterBounds(const FVector3d& point, double radius, double extent,
+                                                      double speed)
 {
 	FBCharParams blob;
 	blob.point = point;

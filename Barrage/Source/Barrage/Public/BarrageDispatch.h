@@ -129,7 +129,7 @@ public:
 	//StackUp should be called before StepWorld and from the same thread. anything can be done between them.
 	//Returns rather than applies the FBPhysicsInputs that affect Primitives of Types: Character
 	//This list may expand. Failure to handle these will result in catastrophic bugs.
-	void StackUp() const;
+	void StackUp();
 	bool UpdateCharacters(TSharedPtr<TArray<FBPhysicsInput>> CharacterInputs) const;
 	bool UpdateCharacter(FBPhysicsInput& CharacterInput) const;
 	
@@ -206,4 +206,8 @@ private:
 		}
 		TombOffset = (TombOffset + 1) % (TombstoneInitialMinimum + 1);
 	}
+
+private:
+	std::array<FBPhysicsInput, 32000> InternalSortableSet = {};
+	std::array<JPH::BodyID, 8192> Adds;
 };

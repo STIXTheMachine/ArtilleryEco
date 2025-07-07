@@ -45,6 +45,8 @@ public:
 			auto avgrate = duration_cast<std::chrono::nanoseconds>(swap - LastRollOver).count()/1000.0;
 			LastRollOver = swap;
 			UE_LOG(LogTemp, Warning, TEXT("Average time for function id.%hs is nanoseconds = '%lld' at roughly one call per '%f'."), id.data, TotalTime / CallCounter, avgrate);
+			TotalTime =0;
+			CallCounter = 0;
 		}
 	}
 
