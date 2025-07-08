@@ -17,8 +17,8 @@ public class JoltPhysics : ModuleRules
         {
             cmakeOptions += " -DCMAKE_BUILD_TYPE=Debug ";
             cmakeOptions += " -DGENERATE_DEBUG_SYMBOLS=ON ";
-            cmakeOptions += " -DOVERRIDE_CXX_FLAGS=OFF "; // probably may be omitted
-            cmakeOptions += " -DCMAKE_CXX_FLAGS_RELEASE=\" /GS /Od /Ob0 /RTC1\" "; // probably may be omitted
+            cmakeOptions += " -DOVERRIDE_CXX_FLAGS=ON "; // probably may be omitted
+            cmakeOptions += " -DCMAKE_CXX_FLAGS_RELEASE=\" /GS /O1 /Ob2\" "; // probably may be omitted
             cmakeOptions += " -DDEBUG_RENDERER=OFF ";
             cmakeOptions += " -DPROFILE_ENABLED=OFF ";
             cmakeOptions += " -DENABLE_ASSERTS=OFF ";
@@ -27,8 +27,8 @@ public class JoltPhysics : ModuleRules
         {
             cmakeOptions += " -DCMAKE_BUILD_TYPE=Release ";
             cmakeOptions += " -DGENERATE_DEBUG_SYMBOLS=ON ";
-            cmakeOptions += " -DOVERRIDE_CXX_FLAGS=OFF "; // probably may be omitted
-            cmakeOptions += " -DCMAKE_CXX_FLAGS_RELEASE=\" /GS /Od /Ob0 /RTC1\" "; // probably may be omitted
+            cmakeOptions += " -DOVERRIDE_CXX_FLAGS=ON "; // probably may be omitted
+            cmakeOptions += " -DCMAKE_CXX_FLAGS_RELEASE=\" /GS /O1 /Ob2\" "; // probably may be omitted
             cmakeOptions += " -DDEBUG_RENDERER=OFF ";
             cmakeOptions += " -DPROFILE_ENABLED=OFF ";
             cmakeOptions += " -DENABLE_ASSERTS=OFF ";

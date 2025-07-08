@@ -269,14 +269,17 @@ void UNiagaraParticleDispatch::UpdateNDCChannels()
 			UNiagaraDataChannelWriter* ChannelWriter = it.Value().Get<1>();
 			FNiagaraDataChannelSearchParameters SearchParams;
 			ChannelWriter->InitWrite(SearchParams, KeySet->Num(), true, true, true, UNiagaraParticleDispatch::StaticClass()->GetName());
-			
-			for (TSet<FSkeletonKey>::TConstIterator RecordIter = KeySet->CreateConstIterator(); it; ++it)
+
+			int RecordIntoIDX = 0;
+			for (TSet<FSkeletonKey>::TConstIterator RecordIter = KeySet->CreateConstIterator(); RecordIter; ++RecordIter)
 			{
+				
 				TOptional<FTransform3d> KeyTransform = TD->CopyOfTransformByObjectKey(*RecordIter);
 				if (KeyTransform.IsSet())
 				{
-					ChannelWriter->WritePosition(TEXT("Position"), 0, KeyTransform->GetLocation());
+					ChannelWriter->WritePosition(TEXT("Position"), RecordIntoIDX, KeyTransform->GetLocation());
 				}
+				++RecordIntoIDX;
 			}
 		}
 	}
