@@ -3,7 +3,7 @@
 //if we could make a promise about when threads are allocated, we could probably get rid of this
 //since the accumulator is in the world subsystem and so gets cleared when the world spins down.
 //This is identical to the design found in Barrage, since it ended up working beautifully.
-static thread_local uint32 MyARTILLERYIndex = ALLOWED_THREADS_FOR_ARTILLERY + 1;
+inline thread_local extern int32 MyARTILLERYIndex = ALLOWED_THREADS_FOR_ARTILLERY + 1;
 
 void F_INeedA::Feed()
 {

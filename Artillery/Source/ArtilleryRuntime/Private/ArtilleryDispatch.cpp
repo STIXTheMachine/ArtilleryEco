@@ -381,12 +381,10 @@ void UArtilleryDispatch::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	RunGuns(); // ALL THIS WORK. FOR THIS?! (Okay, that's really cool)
-	AActor* PlayerKP = UArtilleryLibrary::GetLocalPlayer_UNSAFE();
 	UBarrageDispatch* BarrageDispatch = GetWorld()->GetSubsystem<UBarrageDispatch>();
 	// both transform dispatch and gamesim must be ready. Otherwise, let the queue build up.
-	if (UTransformDispatch::SelfPtr && BarrageDispatch && PlayerKP != nullptr)
+	if (UTransformDispatch::SelfPtr && BarrageDispatch)
 	{
-		//oh i place a hex on you
 		UTransformDispatch::SelfPtr->ApplyTransformUpdates<TSharedPtr<TransformUpdatesForGameThread>>(BarrageDispatch->GameTransformPump);
 	}
 	//dumbfire it with the ol' skibidi

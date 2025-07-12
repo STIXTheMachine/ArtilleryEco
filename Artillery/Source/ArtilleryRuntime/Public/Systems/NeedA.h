@@ -83,7 +83,7 @@ public:
 	FeedMap BusyWorkerAcc[ALLOWED_THREADS_FOR_ARTILLERY];
 	GameFeedMap GameThreadAcc[ALLOWED_THREADS_FOR_ARTILLERY];
 	FeedMap AIThreadAcc[ALLOWED_THREADS_FOR_ARTILLERY];
-	uint8 ThreadAccTicker = 0;
+	int32 ThreadAccTicker = 0;
 	mutable FCriticalSection GrowOnlyAccLock;
 	
 	void Feed();

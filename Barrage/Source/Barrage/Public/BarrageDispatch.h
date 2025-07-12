@@ -51,9 +51,13 @@ constexpr int ALLOWED_THREADS_FOR_BARRAGE_PHYSICS = 64;
 //that would mean that we could add all the threads, then copy the state from the volatile array to a
 //fixed read-only hash table during begin play. this is already complicated though, and let's see if we like it
 //before we invest more time in it. I had a migraine when I wrote this, by way of explanation --J
-thread_local static uint32 MyBARRAGEIndex = ALLOWED_THREADS_FOR_BARRAGE_PHYSICS + 1;
 
-thread_local static uint32 MyWORKERIndex = ALLOWED_THREADS_FOR_BARRAGE_PHYSICS + 1;
+	//hi, static actually is per TLU. this has... exotic behavior in our use cases! 
+	inline thread_local extern  int32 MyBARRAGEIndex = ALLOWED_THREADS_FOR_BARRAGE_PHYSICS + 1;
+
+	inline thread_local extern  int32 MyWORKERIndex = ALLOWED_THREADS_FOR_BARRAGE_PHYSICS + 1;
+
+
 
 UCLASS()
 class BARRAGE_API UBarrageDispatch : public UTickableWorldSubsystem, public ISkeletonLord, public ICanReady
@@ -70,12 +74,12 @@ public:
 	virtual bool RegistrationImplementation() override;
 	void GrantWorkerFeed(int MyThreadIndex);
 	static constexpr float TickRateInDelta = 1.0 / HERTZ_OF_BARRAGE;
-	uint8 ThreadAccTicker = 0;
+	int32 ThreadAccTicker = 0;
 	TSharedPtr<TransformUpdatesForGameThread> GameTransformPump;
 	TSharedPtr<TCircularQueue<BarrageContactEvent>> ContactEventPump;
 	 //this value indicates you have none.
 	mutable FCriticalSection GrowOnlyAccLock;
-	uint8 WorkerThreadAccTicker = 0;
+	int32 WorkerThreadAccTicker = 0;
 	mutable FCriticalSection MultiAccLock;
 
 	// Why would I do it this way? It's fast and easy to debug, and we will probably need to force a thread
