@@ -10,9 +10,9 @@ void F_INeedA::Feed()
 	FScopeLock GrantFeedLock(&GrowOnlyAccLock);
 		
 	//TODO: expand if we need for rollback powers. could be sliiiick
-	BusyWorkerAcc[ThreadAccTicker] = FeedMap(std::this_thread::get_id(), 2048);
-	GameThreadAcc[ThreadAccTicker] = GameFeedMap(std::this_thread::get_id(), 2048);
-	AIThreadAcc[ThreadAccTicker] = FeedMap(std::this_thread::get_id(), 2048);
+	BusyWorkerAcc[ThreadAccTicker] = FeedMap(std::this_thread::get_id(), 4096);
+	GameThreadAcc[ThreadAccTicker] = GameFeedMap(std::this_thread::get_id(), 4096);
+	AIThreadAcc[ThreadAccTicker] = FeedMap(std::this_thread::get_id(), 4096);
 	MyARTILLERYIndex = ThreadAccTicker;
 	++ThreadAccTicker;
 }

@@ -48,7 +48,7 @@ public:
 		return FSkeletonKey(FORGE_SKELETON_KEY(GetTypeHash(*this), SKELLY::SFIX_ART_GUNS));
 	}
 	
-	friend uint32 GetTypeHash(const FGunKey& Other)
+	friend uint32 GetTypeHash(const FGunKey Other)
 	{
 		//WARNING: TYPEHASH CONSIDERED HARMFUL
 		//originally, we just used typehash.
