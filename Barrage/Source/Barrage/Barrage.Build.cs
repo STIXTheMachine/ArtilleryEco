@@ -97,22 +97,22 @@ public class Barrage : ModuleRules
             configType = "Distribution";
         }
 
-
-
+        var projectFile = this.Target.ProjectFile;
+        if (projectFile == null)
+        {
+	        throw new Exception("Invalid project file");
+        }
+        
+        var projectBaseDirectory = projectFile.Directory.FullName;
+        var buildDirectory = Path.Combine(projectBaseDirectory, "Intermediate", "CMakeTarget");
 
         var libPath = "";
-
-        // only for win64. but shouldn't be a problem to do it for other platforms, you just need to change the path
         if (Target.Platform == UnrealTargetPlatform.Win64)
         {
-			// this path is relative and can change a bit, adjust it according to your project structure. you need to point to library what is built by UE4CMake (*.lib / *.a)
-			// TODO: replace this. It's a huge maintenance hazard.
-            libPath = Path.Combine(ModuleDirectory, "../../../../Intermediate/CMakeTarget/Jolt/build/Jolt/" + configType, "Jolt.lib");
+            libPath = Path.Combine(buildDirectory, "Jolt/build/Jolt", configType, "Jolt.lib");
         }
 
-
         PublicAdditionalLibraries.Add(libPath);
-		
 	}
 
 	private void DefineIt(String str)
